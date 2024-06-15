@@ -1,0 +1,2 @@
+
+float CtoF (float degC);
