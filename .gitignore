@@ -5,3 +5,6 @@
 .vscode/ipch
 *.old
 components/**
+appconfig.ini
+sdkconfig.*
+!sdkconfig.defaults

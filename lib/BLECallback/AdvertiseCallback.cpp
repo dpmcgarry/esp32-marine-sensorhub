@@ -1,6 +1,6 @@
 #include <BLECallback.h>
 
-static const char *const TAG = "esp32-temp-reporter-main";
+static const char *const TAG = "esp32-temp-reporter-ble-callback";
 
 void OnAdvertisedDevice::onResult(BLEAdvertisedDevice *advertisedDevice)
 {

@@ -1,0 +1,6 @@
+[env:salon]
+extends = common:esp32-c6
+; Build options
+build_flags =
+    -DSSID_NAME=HELLO
+    -DSSID_PASWORD=WORLD

@@ -1,3 +1,5 @@
+#pragma once 
+
 #include "esp_log.h"
 #include "NimBLEDevice.h"
 #include "NimBLEUtils.h"
