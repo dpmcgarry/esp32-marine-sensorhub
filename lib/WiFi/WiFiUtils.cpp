@@ -18,12 +18,12 @@ void WiFiInfo::SetPassword(const std::string &password)
     this->password = password;
 }
 
-const std::string &WiFiInfo::GetSSID() const
+std::string &WiFiInfo::GetSSID()
 {
     return this->ssid;
 }
 
-const std::string &WiFiInfo::GetPassword() const
+std::string &WiFiInfo::GetPassword()
 {
     return this->password;
 }
@@ -48,12 +48,23 @@ SemaphoreHandle_t WiFiInfo::GetIPSemaphore()
     return this->sema_get_ip_addrs;
 }
 
+void WiFiInfo::SetInterfaceDescription(const std::string &description)
+{
+    this->intDescription = description;
+}
+
+std::string &WiFiInfo::GetInterfaceDescription()
+{
+    return this->intDescription;
+}
+
 static void OnWiFiDisconnect(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
     ESP_LOGI(TAG, "OnWifiDisconnect");
     WiFiInfo *info = NULL;
-    info = (WiFiInfo *)event_data;
+    info = (WiFiInfo *)arg;
     info->IncrementRetries();
+    ESP_LOGI(TAG, "Retries: %d", info->GetRetries());
 
     // if (s_retry_num > CONFIG_EXAMPLE_WIFI_CONN_MAX_RETRY) {
     // ESP_LOGI(TAG, "WiFi Connect failed %d times, stop reconnect.", s_retry_num);
@@ -76,7 +87,7 @@ static void OnWifiGotIP(void *arg, esp_event_base_t event_base, int32_t event_id
 {
     ESP_LOGI(TAG, "OnWifiGotIP");
     WiFiInfo *info = NULL;
-    info = (WiFiInfo *)event_data;
+    info = (WiFiInfo *)arg;
     info->ClearRetries();
     ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
     if (!strncmp(info->GetInterfaceDescription().c_str(), esp_netif_get_desc(event->esp_netif), strlen(info->GetInterfaceDescription().c_str())- 1)==0)
@@ -94,6 +105,9 @@ static void OnWifiGotIP(void *arg, esp_event_base_t event_base, int32_t event_id
 static void OnWiFiConnect(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
     ESP_LOGI(TAG, "OnWifiConnect");
+    WiFiInfo *info = NULL;
+    info = (WiFiInfo *)arg;
+    info->ClearRetries();
 }
 
 esp_err_t WiFiInfo::Connect()
@@ -101,14 +115,27 @@ esp_err_t WiFiInfo::Connect()
     ESP_LOGI(TAG, "Starting WiFi");
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+    ESP_LOGD(TAG, "WiFi Init Complete");
     esp_netif_inherent_config_t esp_netif_config = ESP_NETIF_INHERENT_DEFAULT_WIFI_STA();
-    esp_netif_config.if_desc = this->intDescription.c_str();
-    esp_netif_config.route_prio = 128;
+    
+    #ifdef USE_STATICIP
+    ESP_LOGI(TAG, "Will use static IP configuration");
+    esp_netif_dhcpc_stop(esp_netif_config);
+    esp_netif_ip_info_t ip_info;
+    IP4_ADDR(&ip_info.ip, 192, 168, 15, 22);
+   	IP4_ADDR(&ip_info.gw, 192, 168, 15, 1);
+   	IP4_ADDR(&ip_info.netmask, 255, 255, 255, 0);
+
+    esp_netif_set_ip_info(my_sta, &ip_info);
+    #endif
+    esp_netif_config.if_desc = this->GetInterfaceDescription().c_str();
     this->wifiInterface = esp_netif_create_wifi(WIFI_IF_STA, &esp_netif_config);
+    ESP_LOGD(TAG, "WiFi Interface Set");
     esp_wifi_set_default_wifi_sta_handlers();
 
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_LOGD(TAG, "WiFi PreStart");
     ESP_ERROR_CHECK(esp_wifi_start());
 
     ESP_LOGI(TAG, "WiFi Started");
@@ -122,12 +149,12 @@ esp_err_t WiFiInfo::Connect()
     wifi_config.sta.listen_interval = 0;
     wifi_config.sta.threshold.rssi = -127;
     wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
-    this->sema_get_ip_addrs = xSemaphoreCreateBinary();
-    if (this->sema_get_ip_addrs == NULL)
+    sema_get_ip_addrs = xSemaphoreCreateBinary();
+    if (sema_get_ip_addrs == NULL)
     {
         return ESP_ERR_NO_MEM;
     }
-    this->connect_retry_count = 0;
+    this->ClearRetries();
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &OnWiFiDisconnect, this));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &OnWifiGotIP, this));
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, &OnWiFiConnect, this));
@@ -142,6 +169,6 @@ esp_err_t WiFiInfo::Connect()
         return ret;
     }
     ESP_LOGI(TAG, "Waiting for IP(s)");
-    xSemaphoreTake(this->sema_get_ip_addrs, portMAX_DELAY);
+    xSemaphoreTake(sema_get_ip_addrs, portMAX_DELAY);
     return ESP_OK;
 }

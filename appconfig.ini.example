@@ -1,6 +1,13 @@
-[env:salon]
+[env:example]
 extends = common:esp32-c6
 ; Build options
 build_flags =
-    -DSSID_NAME=HELLO
-    -DSSID_PASWORD=WORLD
+    -DSSID_NAME="\"S3cretSSID\""
+    -DSSID_PASWORD="\"P@55word\""
+    ; If You want to use a Static IP Uncomment below
+    ;-DUSE_STATICIP
+    ;-DIP_ADDRESS="\"192.168.1.10\""
+    ;-DGATEWAY="\"192.168.1.1\""
+    ;-DNET_MASK="\"255.255.255.0\""
+    ;-DDNS_1="\"1.1.1.1\""
+    ;-DDNS_2="\"1.0.0.1\""

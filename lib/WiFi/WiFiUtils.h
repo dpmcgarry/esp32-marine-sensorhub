@@ -8,14 +8,15 @@
 
 class WiFiInfo{
     public:
+    WiFiInfo();
     void SetSSID(const std::string &ssid);
     void SetPassword(const std::string &password);
     void SetInterfaceDescription(const std::string &desc);
     void IncrementRetries();
     void ClearRetries();
-    const std::string &GetSSID() const;
-    const std::string &GetPassword() const;
-    const std::string &GetInterfaceDescription() const;
+    std::string &GetSSID();
+    std::string &GetPassword();
+    std::string &GetInterfaceDescription();
     SemaphoreHandle_t GetIPSemaphore();
     int GetRetries();
     esp_err_t Connect();

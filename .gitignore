@@ -8,3 +8,4 @@ components/**
 appconfig.ini
 sdkconfig.*
 !sdkconfig.defaults
+!sdkconfig.esp32-c6.defaults
