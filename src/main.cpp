@@ -3,6 +3,7 @@
 #include "NimBLEDevice.h"
 #include <BLECallback.h>
 #include <WiFiUtils.h>
+#include <MQTTClientUtils.h>
 
 #undef TAG
 
@@ -29,9 +30,16 @@ void scanTask(void *parameter)
 void app_main(void)
 {
     ESP_LOGI(TAG, "Starting BLE Client application...\n");
-    ESP_ERROR_CHECK( nvs_flash_init() );
+    ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+    ESP_LOGI(TAG, "Free memory: %" PRIu32 " bytes", esp_get_free_heap_size());
+    ESP_LOGI(TAG, "IDF version: %s", esp_get_idf_version());
+    esp_log_level_set("mqtt_client", ESP_LOG_VERBOSE);
+    esp_log_level_set("transport_base", ESP_LOG_VERBOSE);
+    esp_log_level_set("esp-tls", ESP_LOG_VERBOSE);
+    esp_log_level_set("transport", ESP_LOG_VERBOSE);
+    esp_log_level_set("outbox", ESP_LOG_VERBOSE);
     ESP_LOGD(TAG, "ESP Init Complete\n");
     
     BLEDevice::init("");
@@ -42,9 +50,12 @@ void app_main(void)
     wifi->SetPassword(SSID_PASWORD);
     ESP_ERROR_CHECK(wifi->Connect());
     ESP_LOGI(TAG, "Connected!\n");
+    ESP_LOGI(TAG, "MQTT Client Init\n");
+    MQTTClientUtils *mqtt_client = new MQTTClientUtils(MQTT_URI);
+    mqtt_client->Connect();
     BLEScan *pBLEScan = BLEDevice::getScan();
     ESP_LOGD(TAG, "Got Scan Object\n");
-    pBLEScan->setScanCallbacks(new OnAdvertisedDevice());
+    pBLEScan->setScanCallbacks(new OnAdvertisedDevice(mqtt_client));
     ESP_LOGD(TAG, "Set Callback Function\n");
     pBLEScan->setInterval(1349);
     pBLEScan->setWindow(449);

@@ -2,6 +2,16 @@
 
 static const char *const TAG = "esp32-temp-reporter-ble-callback";
 
+OnAdvertisedDevice::OnAdvertisedDevice()
+{
+    this->mqtt = NULL;
+}
+
+OnAdvertisedDevice::OnAdvertisedDevice(MQTTClientUtils *mqtt)
+{
+    this->mqtt = mqtt;
+}
+
 void OnAdvertisedDevice::onResult(BLEAdvertisedDevice *advertisedDevice)
 {
     char *mfrData;
@@ -34,9 +44,30 @@ void OnAdvertisedDevice::onResult(BLEAdvertisedDevice *advertisedDevice)
         ESP_LOGD(TAG, "MSB: %ld", msb);
         float temp = (float)(lsb + msb) / 100.0;
         ESP_LOGI(TAG, "Temperature C: %f", temp);
-        ESP_LOGI(TAG, "Temperature F: %f", CtoF(temp));
+        float temp_f = CtoF(temp);
+        ESP_LOGI(TAG, "Temperature F: %f", temp_f);
         memcpy(foo, &mfrData[14],2);
         float battery = (float)std::stoul(foo, NULL, 16);
         ESP_LOGI(TAG, "Battery: %f", battery);
+        std::stringstream ss;
+        ss<<address << '\n';
+        ss<<temp<<'\n';
+        ss<<temp_f<<'\n';
+        ss<<battery<<'\n';
+
+
+        if (this->mqtt != NULL)
+        {
+            if (this->mqtt->IsConnected())
+            {
+                ESP_LOGI(TAG, "MQTT is Connected. Will publish");
+                this->mqtt->Publish("foo", ss.str(), 0, 1, 0);
+            }
+            else
+            {
+                ESP_LOGI(TAG, "MQTT is NOT Connected.");
+            }
+            
+        }
     }
 }
