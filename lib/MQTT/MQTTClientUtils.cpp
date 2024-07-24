@@ -4,12 +4,13 @@ static const char *const TAG = "esp32-temp-reporter-mqtt";
 
 MQTTClientUtils::MQTTClientUtils()
 {
-
+    this->connected = false;
 }
 
 MQTTClientUtils::MQTTClientUtils(const std::string &connect_uri)
 {
     this->connect_uri = connect_uri;
+    this->connected = false;
 }
 
 std::string MQTTClientUtils::GetURI()

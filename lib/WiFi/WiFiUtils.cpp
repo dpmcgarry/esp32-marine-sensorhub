@@ -6,6 +6,7 @@ WiFiInfo::WiFiInfo()
 {
     this->intDescription = "Default Interface";
     this->sema_get_ip_addrs = NULL;
+    this->connected = false;
 }
 
 void WiFiInfo::SetSSID(const std::string &ssid)
@@ -58,12 +59,41 @@ std::string &WiFiInfo::GetInterfaceDescription()
     return this->intDescription;
 }
 
+bool WiFiInfo::IsConnected()
+{
+    return this->connected;
+}
+
+void WiFiInfo::SetConnected(bool connected)
+{
+    this->connected = connected;
+}
+
+esp_netif_t *WiFiInfo::GetInterface()
+{
+    return this->wifiInterface;
+}
+
+std::string WiFiInfo::GetMACAddrStr()
+{
+    std::stringstream ss;
+    ss<<std::hex<<std::setfill('0');
+    for (int i=0; i<sizeof(this->mac); i++)
+    {
+        ss << std::hex << std::setw(2) << static_cast<int>(mac[i]) << ':';
+    }
+    std::string macstr = ss.str();
+    // remove trailing colon
+    return macstr.erase(macstr.length()-1);
+}
+
 static void OnWiFiDisconnect(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
     ESP_LOGI(TAG, "OnWifiDisconnect");
     WiFiInfo *info = NULL;
     info = (WiFiInfo *)arg;
     info->IncrementRetries();
+    info->SetConnected(false);
     ESP_LOGI(TAG, "Retries: %d", info->GetRetries());
 
     // if (s_retry_num > CONFIG_EXAMPLE_WIFI_CONN_MAX_RETRY) {
@@ -89,6 +119,7 @@ static void OnWifiGotIP(void *arg, esp_event_base_t event_base, int32_t event_id
     WiFiInfo *info = NULL;
     info = (WiFiInfo *)arg;
     info->ClearRetries();
+    info->SetConnected(true);
     ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
     if (!strncmp(info->GetInterfaceDescription().c_str(), esp_netif_get_desc(event->esp_netif), strlen(info->GetInterfaceDescription().c_str())- 1)==0)
      {
@@ -108,6 +139,34 @@ static void OnWiFiConnect(void *arg, esp_event_base_t event_base, int32_t event_
     WiFiInfo *info = NULL;
     info = (WiFiInfo *)arg;
     info->ClearRetries();
+
+    #ifdef USE_STATICIP
+    ESP_LOGI(TAG, "Will use static IP configuration");
+    esp_netif_t *netif = info->GetInterface();
+    if (esp_netif_dhcpc_stop(netif) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to stop dhcp client");
+        return;
+    }
+    
+    esp_netif_ip_info_t ip_info = {0};
+    ip_info.ip.addr = ipaddr_addr(IP_ADDRESS);
+    ip_info.netmask.addr = ipaddr_addr(NET_MASK);
+    ip_info.gw.addr = ipaddr_addr(GATEWAY);
+    if (esp_netif_set_ip_info(netif, &ip_info) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set ip info");
+        return;
+    }
+    ESP_LOGD(TAG, "Success to set static ip: %s, netmask: %s, gw: %s", IP_ADDRESS, NET_MASK, GATEWAY);
+    esp_netif_dns_info_t dns;
+    dns.ip.u_addr.ip4.addr = ipaddr_addr(DNS_1);
+    dns.ip.type = IPADDR_TYPE_V4;
+    ESP_ERROR_CHECK(esp_netif_set_dns_info(netif, ESP_NETIF_DNS_MAIN, &dns));
+    #ifdef DNS_2
+    dns.ip.u_addr.ip4.addr = ipaddr_addr(DNS_2);
+    ESP_ERROR_CHECK(esp_netif_set_dns_info(netif, ESP_NETIF_DNS_BACKUP, &dns));
+    #endif
+
+    #endif
 }
 
 esp_err_t WiFiInfo::Connect()
@@ -117,17 +176,6 @@ esp_err_t WiFiInfo::Connect()
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     ESP_LOGD(TAG, "WiFi Init Complete");
     esp_netif_inherent_config_t esp_netif_config = ESP_NETIF_INHERENT_DEFAULT_WIFI_STA();
-    
-    #ifdef USE_STATICIP
-    ESP_LOGI(TAG, "Will use static IP configuration");
-    esp_netif_dhcpc_stop(esp_netif_config);
-    esp_netif_ip_info_t ip_info;
-    IP4_ADDR(&ip_info.ip, 192, 168, 15, 22);
-   	IP4_ADDR(&ip_info.gw, 192, 168, 15, 1);
-   	IP4_ADDR(&ip_info.netmask, 255, 255, 255, 0);
-
-    esp_netif_set_ip_info(my_sta, &ip_info);
-    #endif
     esp_netif_config.if_desc = this->GetInterfaceDescription().c_str();
     this->wifiInterface = esp_netif_create_wifi(WIFI_IF_STA, &esp_netif_config);
     ESP_LOGD(TAG, "WiFi Interface Set");
@@ -139,6 +187,7 @@ esp_err_t WiFiInfo::Connect()
     ESP_ERROR_CHECK(esp_wifi_start());
 
     ESP_LOGI(TAG, "WiFi Started");
+    ESP_ERROR_CHECK(esp_wifi_get_mac(WIFI_IF_STA, this->mac));
 
     wifi_config_t wifi_config;
     memset(&wifi_config, 0, sizeof(wifi_config));

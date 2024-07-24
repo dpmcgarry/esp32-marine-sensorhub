@@ -50,6 +50,7 @@ void app_main(void)
     wifi->SetPassword(SSID_PASWORD);
     ESP_ERROR_CHECK(wifi->Connect());
     ESP_LOGI(TAG, "Connected!\n");
+    ESP_LOGI(TAG, "MAC Address is: %s", wifi->GetMACAddrStr().c_str());
     ESP_LOGI(TAG, "MQTT Client Init\n");
     MQTTClientUtils *mqtt_client = new MQTTClientUtils(MQTT_URI);
     mqtt_client->Connect();
