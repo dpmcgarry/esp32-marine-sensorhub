@@ -4,6 +4,7 @@ extends = common:esp32-c6
 build_flags =
     -DSSID_NAME="\"S3cretSSID\""
     -DSSID_PASWORD="\"P@55word\""
+    -DMQTT_URI="\"mqtts://user:password@mqtt.example.com:1883\""
     ; If You want to use a Static IP Uncomment below
     ;-DUSE_STATICIP
     ;-DIP_ADDRESS="\"192.168.1.10\""
@@ -11,3 +12,5 @@ build_flags =
     ;-DNET_MASK="\"255.255.255.0\""
     ;-DDNS_1="\"1.1.1.1\""
     ;-DDNS_2="\"1.0.0.1\""
+    ; If you are using MQTTS you need to specify the base64 string of the Root CA
+    ; -DMQTT_CA="\"YOURREALLYLONGBASE64STRINGHERE\""

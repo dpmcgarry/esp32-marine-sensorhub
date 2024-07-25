@@ -148,7 +148,8 @@ static void OnWiFiConnect(void *arg, esp_event_base_t event_base, int32_t event_
         return;
     }
     
-    esp_netif_ip_info_t ip_info = {0};
+    esp_netif_ip_info_t ip_info;
+    memset(&ip_info, 0, sizeof(ip_info));
     ip_info.ip.addr = ipaddr_addr(IP_ADDRESS);
     ip_info.netmask.addr = ipaddr_addr(NET_MASK);
     ip_info.gw.addr = ipaddr_addr(GATEWAY);

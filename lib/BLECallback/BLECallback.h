@@ -7,6 +7,8 @@
 #include <sstream>
 #include <utils.h>
 #include <MQTTClientUtils.h>
+#include <TemperatureMsg.h>
+#include <nlohmann/json.hpp>
 
 static const char *const SERVICE_UUID = "FFF0";
 static const char *const DEVICE_NAME = "tps";

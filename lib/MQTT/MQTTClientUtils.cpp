@@ -1,6 +1,9 @@
 #include "MQTTClientUtils.h"
 
 static const char *const TAG = "esp32-temp-reporter-mqtt";
+#ifdef MQTT_CA
+static const uint8_t mqtt_pem_start[]  = "-----BEGIN CERTIFICATE-----\n"  MQTT_CA  "\n-----END CERTIFICATE-----";
+#endif
 
 MQTTClientUtils::MQTTClientUtils()
 {
@@ -127,7 +130,11 @@ static void mqtt_event_handler(void *arg, esp_event_base_t base, int32_t event_i
 void MQTTClientUtils::Connect()
 {
     ESP_LOGI(TAG, "Connecting MQTT");
-    struct esp_mqtt_client_config_t mqtt_cfg = {0};
+    struct esp_mqtt_client_config_t mqtt_cfg;
+    memset(&mqtt_cfg, 0, sizeof(mqtt_cfg));
+    #ifdef MQTT_CA
+    mqtt_cfg.broker.verification.certificate = (const char *)mqtt_pem_start;
+    #endif
     ESP_LOGI(TAG, "Connecting to endpoint: %s", this->GetURI().c_str());
     mqtt_cfg.broker.address.uri = this->connect_uri.c_str();
     this->client = esp_mqtt_client_init(&mqtt_cfg);

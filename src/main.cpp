@@ -4,6 +4,8 @@
 #include <BLECallback.h>
 #include <WiFiUtils.h>
 #include <MQTTClientUtils.h>
+#include "esp_tls.h"
+#include "esp_crt_bundle.h"
 
 #undef TAG
 

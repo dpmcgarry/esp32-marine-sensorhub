@@ -1,5 +1,7 @@
 #include <BLECallback.h>
 
+using json = nlohmann::json;
+
 static const char *const TAG = "esp32-temp-reporter-ble-callback";
 
 OnAdvertisedDevice::OnAdvertisedDevice()
@@ -49,19 +51,20 @@ void OnAdvertisedDevice::onResult(BLEAdvertisedDevice *advertisedDevice)
         memcpy(foo, &mfrData[14],2);
         float battery = (float)std::stoul(foo, NULL, 16);
         ESP_LOGI(TAG, "Battery: %f", battery);
-        std::stringstream ss;
-        ss<<address << '\n';
-        ss<<temp<<'\n';
-        ss<<temp_f<<'\n';
-        ss<<battery<<'\n';
-
-
+        TemperatureMessage tMsg;
+        tMsg.MAC = address;
+        tMsg.TempC = temp;
+        tMsg.TempF = temp_f;
+        tMsg.BatteryPercent = battery;
+        json j = tMsg;
+        std::string j_str = nlohmann::to_string(j);
+        ESP_LOGI(TAG,"JSON: %s", j_str.c_str());
         if (this->mqtt != NULL)
         {
             if (this->mqtt->IsConnected())
             {
                 ESP_LOGI(TAG, "MQTT is Connected. Will publish");
-                this->mqtt->Publish("foo", ss.str(), 0, 1, 0);
+                this->mqtt->Publish("foo", j_str, 0, 1, 0);
             }
             else
             {
