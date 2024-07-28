@@ -102,7 +102,7 @@ You should be able to use/fork this by doing the following:
 * Add SNTP Support (Needed for TLS among other things)
 * Move BLE Listener to own task that enqueues messages for main task
 * Add reconnect logic for WiFi and MQTT
-* Add topic structure / config to MQTT
+* ~~Add topic structure / config to MQTT~~
 * ~~MQTT Auth~~
 * ~~Support private CA signed certs~~
 * Try to get MQTT Client to use the embedded CA Trust Store

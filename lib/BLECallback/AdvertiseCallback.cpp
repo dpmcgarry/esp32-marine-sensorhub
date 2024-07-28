@@ -3,6 +3,7 @@
 using json = nlohmann::json;
 
 static const char *const TAG = "esp32-temp-reporter-ble-callback";
+static const std::string bleTemp_subtopic = "ble/temperature";
 
 OnAdvertisedDevice::OnAdvertisedDevice()
 {
@@ -59,12 +60,14 @@ void OnAdvertisedDevice::onResult(BLEAdvertisedDevice *advertisedDevice)
         json j = tMsg;
         std::string j_str = nlohmann::to_string(j);
         ESP_LOGI(TAG,"JSON: %s", j_str.c_str());
+        std::string topic_str = ROOT_TOPIC;
+        topic_str = topic_str + "/" + bleTemp_subtopic + "/" + address;
         if (this->mqtt != NULL)
         {
             if (this->mqtt->IsConnected())
             {
-                ESP_LOGI(TAG, "MQTT is Connected. Will publish");
-                this->mqtt->Publish("foo", j_str, 0, 1, 0);
+                ESP_LOGI(TAG, "MQTT is Connected. Will publish to topic: %s", topic_str.c_str());
+                this->mqtt->Publish(topic_str, j_str, 0, 1, 0);
             }
             else
             {
