@@ -25,3 +25,11 @@ class MQTTClientUtils
     bool connected;
 
 };
+
+typedef struct 
+{
+    std::string topic;
+    std::string data;
+    int qos;
+    int retain;
+} mqtt_message;

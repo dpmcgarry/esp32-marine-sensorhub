@@ -69,8 +69,6 @@ static void mqtt_event_handler(void *arg, esp_event_base_t base, int32_t event_i
     mqtt = (MQTTClientUtils*)arg;
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%" PRIi32 "", base, event_id);
     esp_mqtt_event_handle_t event = (esp_mqtt_event_handle_t) event_data;
-    esp_mqtt_client_handle_t client = event->client;
-    int msg_id;
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
@@ -97,7 +95,7 @@ static void mqtt_event_handler(void *arg, esp_event_base_t base, int32_t event_i
         printf("DATA=%.*s\r\n", event->data_len, event->data);
         break;
     case MQTT_EVENT_ERROR:
-        mqtt->SetConnected(false);
+        // mqtt->SetConnected(false);
         ESP_LOGE(TAG, "MQTT_EVENT_ERROR");
         if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT) {
             log_error_if_nonzero("reported from esp-tls", event->error_handle->esp_tls_last_esp_err);
@@ -108,7 +106,7 @@ static void mqtt_event_handler(void *arg, esp_event_base_t base, int32_t event_i
         }
         break;
     default:
-        mqtt->SetConnected(false);
+        // mqtt->SetConnected(false);
         ESP_LOGI(TAG, "Other event id:%d", event->event_id);
         break;
     }

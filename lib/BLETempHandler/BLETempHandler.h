@@ -13,11 +13,11 @@
 static const char *const SERVICE_UUID = "FFF0";
 static const char *const DEVICE_NAME = "tps";
 
-class OnAdvertisedDevice : public BLEAdvertisedDeviceCallbacks
+class BLETempHandler : public BLEAdvertisedDeviceCallbacks
 {
     public:
-    OnAdvertisedDevice();
-    OnAdvertisedDevice(MQTTClientUtils *mqtt);
+    BLETempHandler();
+    BLETempHandler(MQTTClientUtils *mqtt);
 
     private:
     MQTTClientUtils *mqtt;

@@ -1,21 +1,21 @@
-#include <BLECallback.h>
+#include <BLETempHandler.h>
 
 using json = nlohmann::json;
 
 static const char *const TAG = "esp32-temp-reporter-ble-callback";
 static const std::string bleTemp_subtopic = "ble/temperature";
 
-OnAdvertisedDevice::OnAdvertisedDevice()
+BLETempHandler::BLETempHandler()
 {
     this->mqtt = NULL;
 }
 
-OnAdvertisedDevice::OnAdvertisedDevice(MQTTClientUtils *mqtt)
+BLETempHandler::BLETempHandler(MQTTClientUtils *mqtt)
 {
     this->mqtt = mqtt;
 }
 
-void OnAdvertisedDevice::onResult(BLEAdvertisedDevice *advertisedDevice)
+void BLETempHandler::onResult(BLEAdvertisedDevice *advertisedDevice)
 {
     char *mfrData;
     if (advertisedDevice->haveServiceUUID())
