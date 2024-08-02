@@ -6,7 +6,6 @@
 #include <MQTTClientUtils.h>
 #include "esp_tls.h"
 #include "esp_crt_bundle.h"
-#include "freertos/ringbuf.h"
 
 #undef TAG
 
@@ -21,24 +20,40 @@ extern "C"
 
 void scanTask(void *parameter)
 {
+    MQTTClientUtils *mqtt_client = NULL;
+    mqtt_client = (MQTTClientUtils*)parameter;
+    BLEDevice::init("");
+    ESP_LOGD(TAG, "BLE Initialized\n");
     ESP_LOGI(TAG, "BLE Scan Task Init");
+    BLEScan *pBLEScan = BLEDevice::getScan();
+    ESP_LOGD(TAG, "Got Scan Object\n");
+    pBLEScan->setScanCallbacks(new BLETempHandler(mqtt_client));
+    ESP_LOGD(TAG, "Set Callback Function\n");
+    pBLEScan->setActiveScan(true);
+    ESP_LOGD(TAG, "Set scan paramters\n");
     for (;;)
     {
-        // Delay  between loops.
-        vTaskDelay(DELAY_MS / portTICK_PERIOD_MS); 
+        ESP_LOGI(TAG, "Free Heap: %lu", esp_get_free_heap_size());
+        vTaskDelay(DELAY_MS / portTICK_PERIOD_MS);
         ESP_LOGD(TAG, "Rerunning scan\n");
-        // TODO: See if there is a better way to restart
-        BLEDevice::getScan()->start(0);
+        if (!pBLEScan->isScanning())
+        {
+            ESP_LOGI(TAG, "BLE Scanner is not scanning. Starting scan.");
+            pBLEScan->start(5000, false);
+        }
+        else
+        {
+            ESP_LOGI(TAG, "BLE Scanner is scanning. Continuing.");
+        }
     }
 }
 
-void mainTask(void* parameter)
+void mainTask(void *parameter)
 {
-    RingbufHandle_t msg_buf_handle;
-    msg_buf_handle = xRingbufferCreate(1028, RINGBUF_TYPE_NOSPLIT);
-    if (msg_buf_handle == NULL) {
-        ESP_LOGE(TAG, "Failed to create ring buffer");
-    }
+    bool hasResetWifi = false;
+    bool hasResetMQTT = false;
+    u16_t wifiReconnectCount = 0;
+    u16_t mqttReconnectCount = 0;
     ESP_LOGI(TAG, "Connecting to WiFi\n");
     WiFiInfo *wifi = new WiFiInfo();
     wifi->SetSSID(SSID_NAME);
@@ -50,22 +65,22 @@ void mainTask(void* parameter)
     ESP_LOGI(TAG, "MQTT Client Init\n");
     MQTTClientUtils *mqtt_client = new MQTTClientUtils(MQTT_URI);
     mqtt_client->Connect();
-    BLEScan *pBLEScan = BLEDevice::getScan();
-    ESP_LOGD(TAG, "Got Scan Object\n");
-    pBLEScan->setScanCallbacks(new BLETempHandler(mqtt_client));
-    ESP_LOGD(TAG, "Set Callback Function\n");
-    pBLEScan->setInterval(1349);
-    pBLEScan->setWindow(449);
-    pBLEScan->setActiveScan(true);
-    ESP_LOGD(TAG, "Set scan paramters\n");
-    pBLEScan->start(5 * 1000, false);
-    xTaskCreate(scanTask, "scanTask", 5000, NULL, 1, NULL);
-    vTaskDelay(MAIN_DELAY_MS / portTICK_PERIOD_MS); 
+
+    xTaskCreate(scanTask, "scanTask", 5000, mqtt_client, 1, NULL);
+    vTaskDelay(MAIN_DELAY_MS / portTICK_PERIOD_MS);
     for (;;)
     {
         ESP_LOGI(TAG, "Main Task Execution Loop");
+        ESP_LOGI(TAG, "Free SRAM: %zu", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+        ESP_LOGI(TAG, "Free Heap: %lu", esp_get_free_heap_size());
+        ESP_LOGI(TAG, "Free PSRAM: %zu", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+        ESP_LOGI(TAG, "WiFi has been re-initialized? %s", hasResetWifi ? "true" : "false");
+        ESP_LOGI(TAG, "MQTT has been re-initialized? %s", hasResetMQTT ? "true" : "false");
+        ESP_LOGI(TAG, "WiFi Reconnect Count: %u", wifiReconnectCount);
+        ESP_LOGI(TAG, "MQTT Reconnect Count: %u", mqttReconnectCount);
         if (wifi == NULL)
         {
+            hasResetWifi = true;
             ESP_LOGW(TAG, "Wifi Object was NULL. Re-initializing");
             wifi = new WiFiInfo();
             wifi->SetSSID(SSID_NAME);
@@ -76,6 +91,7 @@ void mainTask(void* parameter)
         }
         if (!wifi->IsConnected())
         {
+            wifiReconnectCount++;
             ESP_LOGW(TAG, "Wifi is no longer connected. Reconnecting");
             ESP_ERROR_CHECK(wifi->Connect());
             ESP_LOGI(TAG, "Connected!\n");
@@ -83,27 +99,27 @@ void mainTask(void* parameter)
         }
         if (mqtt_client == NULL)
         {
+            hasResetMQTT = true;
             ESP_LOGW(TAG, "MQTT Client Object was NULL. Re-initializing");
             mqtt_client = new MQTTClientUtils(MQTT_URI);
             mqtt_client->Connect();
         }
-        if(!mqtt_client->IsConnected())
+        if (!mqtt_client->IsConnected())
         {
             ESP_LOGW(TAG, "MQTT Client is no longer connected");
-            if(!wifi->IsConnected())
+            if (!wifi->IsConnected())
             {
                 ESP_LOGW(TAG, "Wifi isn't connected so waiting for that to get sorted.");
             }
             else
             {
                 ESP_LOGW(TAG, "Wifi is connected. Attempting to reconnect MQTT.");
-                //mqtt_client->Connect();
+                mqttReconnectCount++;
+                mqtt_client->Connect();
             }
         }
-        vTaskDelay(MAIN_DELAY_MS / portTICK_PERIOD_MS); 
+        vTaskDelay(MAIN_DELAY_MS / portTICK_PERIOD_MS);
     }
-    
-
 }
 
 void app_main(void)
@@ -120,14 +136,7 @@ void app_main(void)
     esp_log_level_set("transport", ESP_LOG_VERBOSE);
     esp_log_level_set("outbox", ESP_LOG_VERBOSE);
     ESP_LOGD(TAG, "ESP Init Complete\n");
-    
-    BLEDevice::init("");
-    ESP_LOGD(TAG, "BLE Initialized\n");
-    
-    
-    
-    
-    ESP_LOGD(TAG, "Creating FreeRTOS Task\n");
+    ESP_LOGD(TAG, "Creating FreeRTOS Main Task\n");
     xTaskCreate(mainTask, "mainTask", 5000, NULL, 1, NULL);
     ESP_LOGD(TAG, "Task exit\n");
 }

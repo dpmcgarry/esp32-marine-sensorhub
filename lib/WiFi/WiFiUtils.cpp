@@ -95,15 +95,6 @@ static void OnWiFiDisconnect(void *arg, esp_event_base_t event_base, int32_t eve
     info->IncrementRetries();
     info->SetConnected(false);
     ESP_LOGI(TAG, "Retries: %d", info->GetRetries());
-
-    // if (s_retry_num > CONFIG_EXAMPLE_WIFI_CONN_MAX_RETRY) {
-    // ESP_LOGI(TAG, "WiFi Connect failed %d times, stop reconnect.", s_retry_num);
-    /* let example_wifi_sta_do_connect() return */
-    // if (s_semph_get_ip_addrs) {
-    //     xSemaphoreGive(s_semph_get_ip_addrs);
-    // }
-    // return;
-    //}
     ESP_LOGI(TAG, "Wi-Fi disconnected, trying to reconnect...");
     esp_err_t err = esp_wifi_connect();
     if (err == ESP_ERR_WIFI_NOT_STARTED)

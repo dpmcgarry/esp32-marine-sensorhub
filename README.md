@@ -100,6 +100,7 @@ You should be able to use/fork this by doing the following:
 * ~~Support Static IP/DNS~~
 * ~~Write data as JSON~~
 * Add SNTP Support (Needed for TLS among other things)
+* Change BLE Implementation to be Sync not async since it is task based which will be cleaner
 * Move BLE Listener to own task that enqueues messages for main task
 * Add reconnect logic for WiFi and MQTT
 * ~~Add topic structure / config to MQTT~~

@@ -29,7 +29,6 @@ void BLETempHandler::onResult(BLEAdvertisedDevice *advertisedDevice)
         strcmp(advertisedDevice->getName().c_str(), DEVICE_NAME) == 0)
     {
         ESP_LOGI(TAG, "Device Found with matching service and name.");
-        BLEDevice::getScan()->stop();
         ESP_LOGI(TAG, "Discovered Advertised Device: %s", advertisedDevice->toString().c_str());
         mfrData = NimBLEUtils::buildHexData(nullptr, (uint8_t*)advertisedDevice->getManufacturerData().data(), advertisedDevice->getManufacturerData().length());
         ESP_LOGI(TAG, "Manufacturer Data: %s", mfrData);
@@ -62,6 +61,7 @@ void BLETempHandler::onResult(BLEAdvertisedDevice *advertisedDevice)
         ESP_LOGI(TAG,"JSON: %s", j_str.c_str());
         std::string topic_str = ROOT_TOPIC;
         topic_str = topic_str + "/" + bleTemp_subtopic + "/" + address;
+        delete mfrData;
         if (this->mqtt != NULL)
         {
             if (this->mqtt->IsConnected())
