@@ -2,7 +2,7 @@
 
 using json = nlohmann::json;
 
-static const char *const TAG = "esp32-temp-reporter-ble-callback";
+static const char *const TAG = "esp32-marine-sensorhub-ble-handler";
 static const std::string bleTemp_subtopic = "ble/temperature";
 
 BLETempHandler::BLETempHandler()
@@ -26,7 +26,7 @@ void BLETempHandler::onResult(BLEAdvertisedDevice *advertisedDevice)
     if (advertisedDevice->haveServiceUUID() &&
         advertisedDevice->isAdvertisingService(NimBLEUUID(SERVICE_UUID)) &&
         advertisedDevice->haveName() &&
-        strcmp(advertisedDevice->getName().c_str(), DEVICE_NAME) == 0)
+        std::find(DEVICE_NAMES.begin(),DEVICE_NAMES.end(), advertisedDevice->getName()) != DEVICE_NAMES.end())
     {
         ESP_LOGI(TAG, "Device Found with matching service and name.");
         ESP_LOGI(TAG, "Discovered Advertised Device: %s", advertisedDevice->toString().c_str());
@@ -56,6 +56,18 @@ void BLETempHandler::onResult(BLEAdvertisedDevice *advertisedDevice)
         tMsg.TempC = temp;
         tMsg.TempF = temp_f;
         tMsg.BatteryPercent = battery;
+        ESP_LOGI(TAG, "This device has humidity support.");
+        memcpy(foo, &mfrData[4],2);
+        lsb = std::stoul(foo, NULL, 16);
+        ESP_LOGI(TAG, "LSB: %ld", lsb);
+        memcpy(foo, &mfrData[6],2);
+        msb = std::stoul(foo,NULL,16);
+        ESP_LOGI(TAG, "MSB: %ld", msb);
+        msb = msb<<8;
+        ESP_LOGI(TAG, "MSB: %ld", msb);
+        float humidity = (float)(lsb + msb) / 100.0;
+        tMsg.Humidity = humidity;
+        
         json j = tMsg;
         std::string j_str = nlohmann::to_string(j);
         ESP_LOGI(TAG,"JSON: %s", j_str.c_str());

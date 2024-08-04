@@ -9,7 +9,7 @@
 
 #undef TAG
 
-static const char *const TAG = "esp32-temp-reporter-main";
+static const char *const TAG = "esp32-marine-sensorhub-main";
 static const u_int DELAY_MS = 500;
 static const u_int MAIN_DELAY_MS = 30000;
 
@@ -18,7 +18,7 @@ extern "C"
     void app_main(void);
 }
 
-void scanTask(void *parameter)
+void BLETask(void *parameter)
 {
     MQTTClientUtils *mqtt_client = NULL;
     mqtt_client = (MQTTClientUtils*)parameter;
@@ -65,8 +65,9 @@ void mainTask(void *parameter)
     ESP_LOGI(TAG, "MQTT Client Init\n");
     MQTTClientUtils *mqtt_client = new MQTTClientUtils(MQTT_URI);
     mqtt_client->Connect();
-
-    xTaskCreate(scanTask, "scanTask", 5000, mqtt_client, 1, NULL);
+    #ifdef ENABLE_BLE
+    xTaskCreate(BLETask, "BLETask", 5000, mqtt_client, 1, NULL);
+    #endif
     vTaskDelay(MAIN_DELAY_MS / portTICK_PERIOD_MS);
     for (;;)
     {

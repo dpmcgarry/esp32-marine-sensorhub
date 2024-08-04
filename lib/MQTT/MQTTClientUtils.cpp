@@ -1,6 +1,6 @@
 #include "MQTTClientUtils.h"
 
-static const char *const TAG = "esp32-temp-reporter-mqtt";
+static const char *const TAG = "esp32-marine-sensorhub-mqtt";
 #ifdef MQTT_CA
 static const uint8_t mqtt_pem_start[]  = "-----BEGIN CERTIFICATE-----\n"  MQTT_CA  "\n-----END CERTIFICATE-----";
 #endif

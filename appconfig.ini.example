@@ -6,6 +6,8 @@ build_flags =
     -DSSID_PASWORD="\"P@55word\""
     -DMQTT_URI="\"mqtts://user:password@mqtt.example.com:1883\""
     -DROOT_TOPIC="\"esproot\""
+    ;Enables BLE Functionality 
+    -DENABLE_BLE
     ; If You want to use a Static IP Uncomment below
     ;-DUSE_STATICIP
     ;-DIP_ADDRESS="\"192.168.1.10\""
