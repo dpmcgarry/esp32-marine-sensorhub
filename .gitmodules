@@ -1,3 +1,0 @@
-[submodule "components/esp-nimble-cpp"]
-	path = components/esp-nimble-cpp
-	url = git@github.com:h2zero/esp-nimble-cpp.git

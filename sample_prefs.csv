@@ -1,0 +1,16 @@
+key,type,encoding,value
+esp32mshprefs,namespace
+ssid_name,data,string,MyWiFiNetwork
+ssid_password,data,string,SuperS3cretP@ssword
+mqtt_uri,data,string,mqtts://user:Password@mqtt.example.org:1883
+root_topic,data,string,esp32msh
+enable_ble,data,u8,1
+use_staticip,data,u8,0
+ip_address,data,string,192.168.1.2
+gateway,data,string,192.168.1.1
+netmask,data,string,255.255.255.0
+dns1,data,string,1.1.1.1
+dns2,data,string,1.0.0.1
+use_privateca,data,u8,0
+mqtt_ca,file,string,./cacerts.cer
+log_level,data,u8,4

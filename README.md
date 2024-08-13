@@ -16,7 +16,7 @@ There are a lot of other frameworks / projects that could tackle this problem bu
 
 1. SignalK aimed to address some of the above constraints but there is fairly tight coupling between the open data standard and the reference implementation.
 1. The SignalK standard itself (at least from what I could decipher) didn't lend itself to extensibility - e.g. I wanted to define arbitrary temperature sensors in locations of my choosing and the spec only seemed to allow for pre-defined temperature locations without any ability to extend it.
-1. The reference implementation is implemented using NodeJS / Javascript which is not my personal preference for programming language. More concerning is that as with most JS based projects dependencies are managed using npm that has a tendency to pull in a LOT of unvetted 3P dependencies. I didn't want to put something on my boat that took on that level of risk.
+1. The reference implementation is implemented using NodeJS / Javascript which is not my personal preference for programming language. More concerning is that as with most JS based projects dependencies are managed using npm that pulls in a LOT of unvetted 3P dependencies. I didn't want to put something on my boat that took on that level of risk.
 1. ESPHome / HomeAssistant is viable as well and there is an awesome ecosystem there. This is the road I initially went down, but when I started to try to get a ESP32-C6 to work I ran into a lot of issues. HA/ESPHome are highly complex OSS projects and are working on having the most impact to the smarthome community. As such, there are a number of layers of complexity to add new microcontroller support / tweak the behavior of the sytem to work well in a marine environment / etc. tldr - for me, this complexity didn't provide the value-add I was looking for in my case. I would imagine that many others would decide the opposite.
 
 ## My High Level Requirements
@@ -40,7 +40,7 @@ Here are some things I know that I want to 'solve' with this system. This may gr
 1. Monitor the temperature of fridges / freezers
 1. Monitor the dry and wet exhaust temperatures of all engines
 1. Monitor tank levels (Fuel, Water, Waste)
-1. Monitor vacuum levels and/or fluid flow rate (Fuel Filtration, Cooling Water)
+1. Monitor vacuum levels (Fuel Filtration)
 1. Monitor voltages (Different Battery Banks)
 1. Monitor other engine basics where feasible (Oil Pressure, Coolant Temp, Transmission Pressure, Transmission Temperature)
 1. Monitor flow of water for seawater cooling pumps (for the A/C and Freezer)
@@ -85,18 +85,39 @@ The entire server is setup with a single ansible playbook. If I can cleanup the 
 
 This project is tackling the ESP side of things. As I do more and have things of value to share with whatever code I need to write on the server and/or other configuration stuff I'll create additional repos and share them here.
 
+I previously approached this by trying to go lower-level and not leveraging the Arduino framework. That turned out to be a mistake IMO because I didn't understand that using Arduino didn't actually *limit* you at all. You can still access FreeRTOS and raw ESP IDF goodness under the hood if you like. The Arduino framework gives you a LOT of great libraries and is C++ oriented vs. pure C oriented. I was investing way too many innovation tokens getting things working with just the IDF and pure C. Being able to leverage some of the awesome code from AdaFruit (buy stuff from them!) is way too valuable not to pass up.
+
 ## Getting Started
 
-I tried to make forking / reusing this pretty straightforward.  This project uses platformio (<https://platformio.org/>).
+I tried to make forking / reusing this pretty straightforward.
 
 You should be able to use/fork this by doing the following:
 
 1. Pull down the code
-1. Install platformio on your machine (using the VSCode extension makes this pretty trivial)
-1. Create your own appconfig.ini based on the example. Define the build flags in that file applicable to you. You can create multiple environments in that file for each of your ESP32's.
-1. Right now I am working with ESP32-C6 devkits so that *should* work out of the box. However adding support for new hardware shouldn't be too hard. I have defined a heirarchical sdkconfig structure for the IDF. So sdkconfig.defaults has all the config common to all ESP32s. sdkconfig.esp32-c6.defaults has the C6-specific config. This is referenced in platformio.ini. It should be 'easy' to just add other extensions to [common] to support other platform-specific needs.
-1. That said, right now I am focused on supporting ESP32 chips using the ESP IDF. I don't want to support the Arduino framework nor do I see value in supporting hardware outside of the ESP32 ecosystem. This could of course change with time.
-1. Once your config is setup you should be able to run ```pio run -t upload``` and then ```pio device monitor``` to see the code in action
+1. Install Arduino IDE / CLI on your machine
+1. Install the ESP-IDF on your machine (installing the VSCode extension makes this semi-trivial)
+1. Create your own settings CSV file based on the example. You can create multiple environments by creating multiple settings CSV files.
+1. Right now I am working with ESP32-C6 devkits so that *should* work out of the box. However adding support for new hardware shouldn't be too hard as long as the ESP implementation of Arduino supports it.
+1. That said, right now I am focused on supporting ESP32 chips using the Arduino Framework. I don't see value in supporting hardware outside of the ESP32 ecosystem. This could of course change with time.
+1. Build and flash the sketch
+1. Generate and flash the settings partition using the commands below
+1. Restart your ESP and enjoy
+
+Commands To Generate and Write NVS Partition - assumed the IDF is installed in your home directory (this is what the IDF installer in VSCode does) - Change mshprefs.csv to match your CSV name:
+
+```bash
+. ~/esp/esp-idf/export.sh
+python ~/esp/esp-idf/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py generate ./mshprefs.csv ./mshprefs.bin 20480
+python ~/esp/esp-idf/components/partition_table/parttool.py --port /dev/ttyUSB0 write_partition --partition-name=nvs --input ./mshprefs.bin 
+
+```
+
+Get Intellisense working by adding this to your include path:
+
+```json
+"~/.arduino15/packages/esp32/tools/esp32-arduino-libs/idf-release_v5.1-b6b4727c58/esp32c6/include/**",
+"~/.arduino15/packages/esp32/tools/esp-rv32/2302/riscv32-esp-elf/include/**" 
+```
 
 ## TODO
 
@@ -110,7 +131,6 @@ You should be able to use/fork this by doing the following:
 * ~~Add topic structure / config to MQTT~~
 * ~~MQTT Auth~~
 * ~~Support private CA signed certs~~
-* Try to get MQTT Client to use the embedded CA Trust Store
 * ~~Confirm that multiple BLE sensors works~~
 * ~~Add BLE Humidity Sensor Support~~
 * Add thermocouple support
@@ -122,5 +142,5 @@ You should be able to use/fork this by doing the following:
 * Add external ADC support for 4-20ma sensors
 * Store some log buffer locally to send over network on reconnect
 * OTA Support
-* Make config pulled from URL/JSON???
 * Add an actual architecture diagram in here
+* Setup a CI build for this so I can share releases
