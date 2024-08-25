@@ -1,4 +1,4 @@
-#include "nvs_flash.h"
+#include "esp_netif_sntp.h"
 #include <Arduino.h>
 #include <ArduinoLog.h>
 #include <BLEDevice.h>
@@ -6,24 +6,17 @@
 #include <src/InkbirdBLEClient/InkbirdBLEClient.h>
 #include <src/MQTTClient/MQTTClient.h>
 #include <src/Prefs/Prefs.h>
+#include <src/RTDClient/RTDClient.h>
+#include <src/ESPClient/ESPClient.h>
+#include <MSHGlobal.h>
 
-#undef TAG
-
-IPAddress ip;
-
-// Constants
-static const u16_t DELAY_MS = 500;
-static const u16_t MAIN_DELAY_MS = 30000;
-
-// Globals
-static bool hasResetMQTT = false;
-static u16_t wifiReconnectCount = 0;
-static u16_t mqttReconnectCount = 0;
 
 // Global Pointers
 msh::InkbirdBLEClient *handler;
 msh::Prefs *prefs;
 msh::MQTTClient *mqtt;
+msh::RTDClient *rtd;
+msh::ESPClient *esp;
 
 void OnScanComplete(BLEScanResults r) {
   Log.trace("OnScanComplete");
@@ -31,21 +24,19 @@ void OnScanComplete(BLEScanResults r) {
 }
 
 void BLETask(void *parameter) {
-  msh::MQTTClient *mqtt_client = NULL;
-  mqtt_client = (msh::MQTTClient *)parameter;
   BLEDevice::init("");
   Log.trace("BLE Initialized\n");
   Log.notice("BLE Scan Task Init");
   BLEScan *pBLEScan = BLEDevice::getScan();
   Log.trace("Got Scan Object\n");
-  handler = new msh::InkbirdBLEClient(mqtt_client);
+  handler = new msh::InkbirdBLEClient(mqtt);
   pBLEScan->setAdvertisedDeviceCallbacks(handler);
   Log.trace("Set Callback Function");
   pBLEScan->setActiveScan(true);
   Log.trace("Set scan paramters");
   for (;;) {
-    Log.notice("Free Heap: %l", esp_get_free_heap_size());
-    vTaskDelay(DELAY_MS / portTICK_PERIOD_MS);
+    Log.trace("BLE Free Heap: %l", esp_get_free_heap_size());
+    vTaskDelay(BLE_DELAY_MS / portTICK_PERIOD_MS);
     Log.trace("Rerunning scan");
     if (!handler->Scanning()) {
       Log.notice("BLE Scanner is not scanning. Starting scan.");
@@ -57,15 +48,74 @@ void BLETask(void *parameter) {
   }
 }
 
-void WatchdogTask(void *parameter) {}
+void RTDTask(void *parameter) {
+  rtd = new msh::RTDClient(prefs->RTDPin(), mqtt);
+  while (true) {
+    Log.info("Reading RTD");
+    Log.trace("RTD Free Heap: %l", esp_get_free_heap_size());
+    rtd->Read();
+    rtd->LogCounters();
+    if (rtd->HasErrors()) {
+      Log.warning("RTD has errors");
+      rtd->LogLastError();
+    }
+    vTaskDelay(RTD_DELAY_MS / portTICK_PERIOD_MS);
+  }
+}
+
+void ESPTask(void *paramter) {
+  while (true) {
+    Log.notice("Main Task Execution Loop");
+    if (!WiFi.isConnected()) {
+      wifiReconnectCount++;
+      neopixelWrite(RGB_BUILTIN, 255, 0, 0);
+      ConnectToWiFi(prefs);
+    }
+    if (mqtt == NULL) {
+      hasResetMQTT = true;
+      Log.warning("MQTT Client Object was NULL. Re-initializing");
+      neopixelWrite(RGB_BUILTIN, 255, 255, 0);
+      mqtt = new msh::MQTTClient(prefs->MQTTUri());
+      if (prefs->UsePrivateCA()) {
+        mqtt->MQTTCA(prefs->MQTTPrivateCA());
+      }
+      mqtt->Connect();
+      vTaskDelay(MAIN_DELAY_MS / portTICK_PERIOD_MS);
+    }
+    if (!mqtt->Connected()) {
+      Log.warning("MQTT Client is no longer connected");
+      neopixelWrite(RGB_BUILTIN, 255, 255, 0);
+      if (!WiFi.isConnected()) {
+        Log.warning("Wifi isn't connected so waiting for that to get sorted.");
+      } else {
+        Log.warning("Wifi is connected. Attempting to reconnect MQTT.");
+        mqttReconnectCount++;
+        mqtt->Connect();
+        vTaskDelay(MAIN_DELAY_MS / portTICK_PERIOD_MS);
+      }
+    }
+    if (WiFi.isConnected() && mqtt != NULL && mqtt->Connected()) {
+      neopixelWrite(RGB_BUILTIN, 0, RGB_BRIGHTNESS, 0);
+      delay(100);
+      neopixelWrite(RGB_BUILTIN, 0, 0, 0);
+      delay(100);
+      neopixelWrite(RGB_BUILTIN, 0, RGB_BRIGHTNESS, 0);
+    }
+    esp->Read();
+    vTaskDelay(MAIN_DELAY_MS / portTICK_PERIOD_MS);
+  }
+}
 
 void setup() {
   Serial.begin(115200);
   while (!Serial && !Serial.available()) {
   }
-  Log.setPrefix(printPrefix); // set prefix similar to NLog
-  Log.setSuffix(printSuffix); // set suffix
-  Log.begin(LOG_LEVEL_VERBOSE, &Serial);
+  Log.setPrefix(printPrefix);  // set prefix similar to NLog
+  Log.setSuffix(printSuffix);  // set suffix
+  // Default to verbose logging until the level is set from prefs
+  Log.begin(LOG_LEVEL_VERBOSE, &Serial, false);
+  // Set LED to Blue for cold boot
+  neopixelWrite(RGB_BUILTIN, 0, 0, 255);
   Log.notice("Setup");
   prefs = new msh::Prefs();
   prefs->Load();
@@ -77,62 +127,26 @@ void setup() {
     mqtt->MQTTCA(prefs->MQTTPrivateCA());
   }
   mqtt->Connect();
+  esp = new msh::ESPClient(mqtt, prefs);
   if (prefs->BLEEnabled()) {
-    xTaskCreate(BLETask, "BLETask", 5000, mqtt, 1, NULL);
+    xTaskCreate(BLETask, "BLETask", 5000, NULL, 1, NULL);
   }
-  vTaskDelay(MAIN_DELAY_MS / portTICK_PERIOD_MS);
+
+  if (prefs->RTDEnabled()) {
+    xTaskCreate(RTDTask, "RTDTask", 5000, NULL, 1, NULL);
+  }
+  // There is something screwy with directly setting the NTP server
+  // Copying the string locally and then converting to c string works
+  String ntpServer = prefs->NTPServer();
+  Log.notice("Setting NTP Server to %s", ntpServer.c_str());
+  esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG(ntpServer.c_str());
+  esp_netif_sntp_init(&config);
+  vTaskDelay(MAIN_START_DELAY_MS / portTICK_PERIOD_MS);
+  xTaskCreate(ESPTask, "ESPTask", 5000, NULL, 1, NULL);
 }
 
 void loop() {
-
-  Log.notice("Main Task Execution Loop");
-  Log.notice("Free SRAM: %z", heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
-  Log.notice("Free Heap: %l", esp_get_free_heap_size());
-  Log.notice("Free PSRAM: %z", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
-  Log.notice("MQTT has been re-initialized? %s",
-             hasResetMQTT ? "true" : "false");
-  Log.notice("WiFi Reconnect Count: %u", wifiReconnectCount);
-  Log.notice("MQTT Reconnect Count: %u", mqttReconnectCount);
-  if (!WiFi.isConnected()) {
-    wifiReconnectCount++;
-    ConnectToWiFi(prefs);
-  }
-  if (mqtt == NULL) {
-    hasResetMQTT = true;
-    Log.warning("MQTT Client Object was NULL. Re-initializing");
-    mqtt = new msh::MQTTClient(prefs->MQTTUri());
-    if (prefs->UsePrivateCA()) {
-      mqtt->MQTTCA(prefs->MQTTPrivateCA());
-    }
-    mqtt->Connect();
-    vTaskDelay(MAIN_DELAY_MS / portTICK_PERIOD_MS);
-  }
-  if (!mqtt->Connected()) {
-    Log.warning("MQTT Client is no longer connected");
-    if (!WiFi.isConnected()) {
-      Log.warning("Wifi isn't connected so waiting for that to get sorted.");
-    } else {
-      Log.warning("Wifi is connected. Attempting to reconnect MQTT.");
-      mqttReconnectCount++;
-      mqtt->Connect();
-      vTaskDelay(MAIN_DELAY_MS / portTICK_PERIOD_MS);
-    }
-  }
-#ifdef RGB_BUILTIN
-  // digitalWrite(RGB_BUILTIN, HIGH);  // Turn the RGB LED white
-  // delay(1000);
-  // digitalWrite(RGB_BUILTIN, LOW);  // Turn the RGB LED off
-  // delay(1000);
-
-  neopixelWrite(RGB_BUILTIN, RGB_BRIGHTNESS, 0, 0); // Red
-  delay(1000);
-  neopixelWrite(RGB_BUILTIN, 0, RGB_BRIGHTNESS, 0); // Green
-  delay(1000);
-  neopixelWrite(RGB_BUILTIN, 0, 0, RGB_BRIGHTNESS); // Blue
-  delay(1000);
-  neopixelWrite(RGB_BUILTIN, 0, 0, 0); // Off / black
-  delay(1000);
-#endif
+  vTaskDelete(NULL);
 }
 
 void ConnectToWiFi(msh::Prefs *prefs) {
@@ -168,6 +182,9 @@ void ConnectToWiFi(msh::Prefs *prefs) {
     Log.notice(".");
     delay(1000);
   }
+
+  // Set RGB to yellow
+  neopixelWrite(RGB_BUILTIN, 255, 255, 0);
   Log.notice("Got IP: %s", WiFi.localIP().toString());
   Log.notice("MAC Address: %s", WiFi.macAddress().c_str());
 }
@@ -205,29 +222,31 @@ void printTimestamp(Print *_logOutput) {
 void printLogLevel(Print *_logOutput, int logLevel) {
   /// Show log description based on log level
   switch (logLevel) {
-  default:
-  case 0:
-    _logOutput->print("SILENT ");
-    break;
-  case 1:
-    _logOutput->print("FATAL ");
-    break;
-  case 2:
-    _logOutput->print("ERROR ");
-    break;
-  case 3:
-    _logOutput->print("WARNING ");
-    break;
-  case 4:
-    _logOutput->print("INFO ");
-    break;
-  case 5:
-    _logOutput->print("TRACE ");
-    break;
-  case 6:
-    _logOutput->print("VERBOSE ");
-    break;
+    default:
+    case 0:
+      _logOutput->print("SILENT ");
+      break;
+    case 1:
+      _logOutput->print("FATAL ");
+      break;
+    case 2:
+      _logOutput->print("ERROR ");
+      break;
+    case 3:
+      _logOutput->print("WARNING ");
+      break;
+    case 4:
+      _logOutput->print("INFO ");
+      break;
+    case 5:
+      _logOutput->print("TRACE ");
+      break;
+    case 6:
+      _logOutput->print("VERBOSE ");
+      break;
   }
 }
 
-void printSuffix(Print *_logOutput, int logLevel) { _logOutput->print("\n"); }
+void printSuffix(Print *_logOutput, int logLevel) {
+  _logOutput->print("\n");
+}

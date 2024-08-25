@@ -9,10 +9,10 @@
 #include <vector>
 
 #include <src/MQTTClient/MQTTClient.h>
-#include <src/Types/TemperatureMsg.h>
+#include "InkbirdMessage.h"
 
 static const char *const SERVICE_UUID = "FFF0";
-static std::vector<String> DEVICE_NAMES = {"tps", "sps"};
+static std::vector<String> DEVICE_NAMES = { "tps", "sps" };
 namespace msh {
 class InkbirdBLEClient : public BLEAdvertisedDeviceCallbacks {
 public:
@@ -26,4 +26,4 @@ private:
   msh::MQTTClient *mqtt;
   bool isScanning;
 };
-}; // namespace msh
+};  // namespace msh

@@ -1,28 +1,42 @@
 #include "src/MQTTClient/MQTTClient.h"
 using namespace msh;
 
-MQTTClient::MQTTClient() { this->connected = false; }
+MQTTClient::MQTTClient() {
+  this->connected = false;
+}
 
 MQTTClient::MQTTClient(const String &connect_uri) {
   this->connect_uri = connect_uri;
   this->connected = false;
 }
 
-String MQTTClient::URI() { return this->connect_uri; }
+String MQTTClient::URI() {
+  return this->connect_uri;
+}
 
 void MQTTClient::URI(const String &connect_uri) {
   this->connect_uri = connect_uri;
 }
 
-void MQTTClient::Connected(bool connected) { this->connected = connected; }
+void MQTTClient::Connected(bool connected) {
+  this->connected = connected;
+}
 
-bool MQTTClient::Connected() { return this->connected; }
+bool MQTTClient::Connected() {
+  return this->connected;
+}
 
-void MQTTClient::MQTTCA(const String &mqtt_ca) { this->mqtt_pem = mqtt_ca; }
+void MQTTClient::MQTTCA(const String &mqtt_ca) {
+  this->mqtt_pem = mqtt_ca;
+}
 
-void MQTTClient::RootTopic(String root_topic) { this->root_topic = root_topic; }
+void MQTTClient::RootTopic(String root_topic) {
+  this->root_topic = root_topic;
+}
 
-String MQTTClient::RootTopic() { return this->root_topic; }
+String MQTTClient::RootTopic() {
+  return this->root_topic;
+}
 
 int MQTTClient::Publish(const String &topic, const String &data, int len,
                         int qos, int retain) {
@@ -64,34 +78,44 @@ static void mqtt_event_handler(void *arg, esp_event_base_t base,
   //           base, event_id);
   esp_mqtt_event_handle_t event = (esp_mqtt_event_handle_t)event_data;
   switch ((esp_mqtt_event_id_t)event_id) {
-  case MQTT_EVENT_CONNECTED:
-    Log.notice("MQTT_EVENT_CONNECTED");
-    Log.notice("Connected to URI: %s", mqtt->URI().c_str());
-    mqtt->Connected(true);
-    break;
-  case MQTT_EVENT_DISCONNECTED:
-    mqtt->Connected(false);
-    Log.notice("MQTT_EVENT_DISCONNECTED");
-    break;
+    case MQTT_EVENT_CONNECTED:
+      Log.notice("MQTT_EVENT_CONNECTED");
+      Log.notice("Connected to URI: %s", mqtt->URI().c_str());
+      mqtt->Connected(true);
+      break;
+    case MQTT_EVENT_DISCONNECTED:
+      mqtt->Connected(false);
+      Log.notice("MQTT_EVENT_DISCONNECTED");
+      break;
 
-  case MQTT_EVENT_SUBSCRIBED:
-    Log.notice("MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-    break;
-  case MQTT_EVENT_UNSUBSCRIBED:
-    Log.notice("MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
-    break;
-  case MQTT_EVENT_PUBLISHED:
-    Log.notice("MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
-    Log.error("MQTT_EVENT_ERROR");
-    if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT) {
-      Log.error("Last errno string (%s)",
-                strerror(event->error_handle->esp_transport_sock_errno));
-    }
-    break;
-  default:
-    // mqtt->SetConnected(false);
-    Log.notice("Other event id:%d", event->event_id);
-    break;
+    case MQTT_EVENT_SUBSCRIBED:
+      Log.notice("MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
+      break;
+    case MQTT_EVENT_UNSUBSCRIBED:
+      Log.notice("MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
+      break;
+    case MQTT_EVENT_PUBLISHED:
+      Log.notice("MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
+      break;
+    case MQTT_EVENT_DATA:
+      Log.notice("MQTT_EVENT_DATA");
+      Log.notice("TOPIC=%.*s\r\n", event->topic_len, event->topic);
+      Log.notice("DATA=%.*s\r\n", event->data_len, event->data);
+      break;
+    case MQTT_EVENT_ERROR:
+      // mqtt->SetConnected(false);
+      Log.error("MQTT_EVENT_ERROR");
+      if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT) {
+        log_error_if_nonzero("reported from esp-tls", event->error_handle->esp_tls_last_esp_err);
+        log_error_if_nonzero("reported from tls stack", event->error_handle->esp_tls_stack_err);
+        log_error_if_nonzero("captured as transport's socket errno", event->error_handle->esp_transport_sock_errno);
+        ESP_LOGE(TAG, "Last errno string (%s)", strerror(event->error_handle->esp_transport_sock_errno));
+      }
+      break;
+    default:
+      // mqtt->SetConnected(false);
+      Log.notice("Other event id:%d", event->event_id);
+      break;
   }
 }
 

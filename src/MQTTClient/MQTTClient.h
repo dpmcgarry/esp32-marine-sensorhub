@@ -33,4 +33,4 @@ typedef struct {
   int qos;
   int retain;
 } mqtt_message;
-}; // namespace msh
+};  // namespace msh

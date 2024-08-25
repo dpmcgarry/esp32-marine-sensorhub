@@ -2,12 +2,13 @@
 
 #include <ArduinoJson.h>
 
-struct TemperatureMessage {
+struct InkbirdMessage {
   String MAC;
   float TempC;
   float TempF;
   float BatteryPercent;
   float Humidity;
+  int RSSI;
   JsonDocument ToJSON() {
     JsonDocument d;
     d["MAC"] = MAC;
@@ -15,6 +16,7 @@ struct TemperatureMessage {
     d["TempF"] = TempF;
     d["BatteryPct"] = BatteryPercent;
     d["Humidity"] = Humidity;
+    d["RSSI"] = RSSI;
     return d;
   }
   String ToJSONString() {

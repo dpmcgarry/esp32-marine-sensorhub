@@ -1,10 +1,14 @@
 key,type,encoding,value
 esp32mshprefs,namespace
+device_name,data,string,dev
 ssid_name,data,string,MyWiFiNetwork
 ssid_password,data,string,SuperS3cretP@ssword
 mqtt_uri,data,string,mqtts://user:Password@mqtt.example.org:1883
 root_topic,data,string,esp32msh
+ntp_server,data,string,0.pool.ntp.org
 enable_ble,data,u8,1
+enable_rtd,data,u8,1
+rtd_pin,data,u8,18
 use_staticip,data,u8,0
 ip_address,data,string,192.168.1.2
 gateway,data,string,192.168.1.1

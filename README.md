@@ -124,7 +124,7 @@ Get Intellisense working by adding this to your include path:
 * ~~Cleanup the WiFi Utils code~~
 * ~~Support Static IP/DNS~~
 * ~~Write data as JSON~~
-* Add SNTP Support (Needed for TLS among other things)
+* ~~Add SNTP Support (Needed for TLS among other things)~~
 * ~~Change BLE Implementation to be Sync not async since it is task based which will be cleaner~~
 * ~~Move BLE Listener to own task that enqueues messages for main task~~
 * ~~Add reconnect logic for WiFi and MQTT~~
@@ -134,8 +134,9 @@ Get Intellisense working by adding this to your include path:
 * ~~Confirm that multiple BLE sensors works~~
 * ~~Add BLE Humidity Sensor Support~~
 * Add thermocouple support
-* Add device heartbeat / status
-* Add PT RTD support
+* ~~Set Device Status using Pixel LED~~
+* ~~Add device heartbeat / status~~
+* ~~Add PT RTD support~~
 * Add INA219 Support for Oil Pressure, Engine Temp
 * ~~Test integration with Telegraf~~
 * Network logging (Syslog)

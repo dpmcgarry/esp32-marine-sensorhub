@@ -10,33 +10,77 @@ Prefs::Prefs() {
   this->use_private_ca = false;
 }
 
-int Prefs::LogLevel() { return (int)this->log_level; }
+int Prefs::LogLevel() {
+  return (int)this->log_level;
+}
 
-String Prefs::SSID() { return this->ssid; }
+String Prefs::DeviceName() {
+  return this->device_name;
+}
 
-String Prefs::SSIDPassword() { return this->ssid_password; }
+String Prefs::SSID() {
+  return this->ssid;
+}
 
-String Prefs::MQTTUri() { return this->mqtt_uri; }
+String Prefs::SSIDPassword() {
+  return this->ssid_password;
+}
 
-String Prefs::RootTopic() { return this->root_topic; }
+String Prefs::MQTTUri() {
+  return this->mqtt_uri;
+}
 
-bool Prefs::BLEEnabled() { return this->enable_ble; }
+String Prefs::RootTopic() {
+  return this->root_topic;
+}
 
-bool Prefs::StaticIPEnabled() { return this->static_ip_en; }
+String Prefs::NTPServer() {
+  return this->ntp_server;
+}
 
-String Prefs::IPAddress() { return this->ip_address; }
+bool Prefs::BLEEnabled() {
+  return this->enable_ble;
+}
 
-String Prefs::IPGateway() { return this->ip_gateway; }
+bool Prefs::RTDEnabled() {
+  return this->enable_rtd;
+}
 
-String Prefs::Netmask() { return this->netmask; }
+int Prefs::RTDPin() {
+  return this->rtd_pin;
+}
 
-String Prefs::DNS1() { return this->dns1; }
+bool Prefs::StaticIPEnabled() {
+  return this->static_ip_en;
+}
 
-String Prefs::DNS2() { return this->dns2; }
+String Prefs::IPAddress() {
+  return this->ip_address;
+}
 
-bool Prefs::UsePrivateCA() { return this->use_private_ca; }
+String Prefs::IPGateway() {
+  return this->ip_gateway;
+}
 
-String Prefs::MQTTPrivateCA() { return this->mqtt_private_ca; }
+String Prefs::Netmask() {
+  return this->netmask;
+}
+
+String Prefs::DNS1() {
+  return this->dns1;
+}
+
+String Prefs::DNS2() {
+  return this->dns2;
+}
+
+bool Prefs::UsePrivateCA() {
+  return this->use_private_ca;
+}
+
+String Prefs::MQTTPrivateCA() {
+  return this->mqtt_private_ca;
+}
 
 bool Prefs::Load() {
   Log.notice("Loading Preferences");
@@ -48,7 +92,19 @@ bool Prefs::Load() {
     return false;
   }
 
-  String pref = "ssid_name";
+  u8_t temp_u8_pref;
+
+  String pref = "device_name";
+  Log.trace("Checking %s", pref);
+  exists = myPrefs.isKey(pref.c_str());
+  if (!exists) {
+    Log.error("%s is required and not defined", pref);
+    return false;
+  }
+  this->device_name = myPrefs.getString(pref.c_str());
+  Log.trace("Got value: %s for pref: %s", this->device_name.c_str(), pref);
+
+  pref = "ssid_name";
   Log.trace("Checking %s", pref);
   exists = myPrefs.isKey(pref.c_str());
   if (!exists) {
@@ -57,6 +113,7 @@ bool Prefs::Load() {
   }
   this->ssid = myPrefs.getString(pref.c_str());
   Log.trace("Got value: %s for pref: %s", this->ssid.c_str(), pref);
+
   pref = "ssid_password";
 
   Log.trace("Checking %s", pref);
@@ -87,10 +144,20 @@ bool Prefs::Load() {
     Log.trace("Got value: %s for pref: %s", this->root_topic, pref);
   }
 
+  pref = "ntp_server";
+  Log.trace("Checking %s", pref);
+  exists = myPrefs.isKey(pref.c_str());
+  if (!exists) {
+    Log.error("%s is required and not defined", pref);
+    return false;
+  }
+  this->ntp_server = myPrefs.getString(pref.c_str());
+  Log.trace("Got value: %s for pref: %s", this->ntp_server.c_str(), pref.c_str());
+
   pref = "enable_ble";
   Log.trace("Checking %s", pref);
   exists = myPrefs.isKey(pref.c_str());
-  u8_t temp_u8_pref;
+
   if (exists) {
     temp_u8_pref = myPrefs.getUChar(pref.c_str());
     Log.trace("Got raw value: %d for pref: %s", temp_u8_pref, pref);
@@ -102,6 +169,35 @@ bool Prefs::Load() {
       Log.error("Invalid preference value %d for %s", temp_u8_pref, pref);
       return false;
     }
+    Log.trace("Got value: %s for pref: %s", this->enable_ble ? "true" : "false", pref.c_str());
+  }
+
+  pref = "enable_rtd";
+  Log.trace("Checking %s", pref);
+  exists = myPrefs.isKey(pref.c_str());
+  if (exists) {
+    temp_u8_pref = myPrefs.getUChar(pref.c_str());
+    Log.trace("Got raw value: %d for pref: %s", temp_u8_pref, pref);
+    if (temp_u8_pref == 0) {
+      this->enable_rtd = false;
+    } else if (temp_u8_pref == 1) {
+      this->enable_rtd = true;
+    } else {
+      Log.error("Invalid preference value %d for %s", temp_u8_pref, pref);
+      return false;
+    }
+    Log.trace("Got value: %s for pref: %s", this->enable_rtd ? "true" : "false", pref.c_str());
+  }
+
+  pref = "rtd_pin";
+  Log.trace("Checking %s", pref);
+  exists = myPrefs.isKey(pref.c_str());
+  if (exists) {
+    this->rtd_pin = myPrefs.getUChar(pref.c_str());
+    Log.trace("Got value: %d for pref: %s", this->rtd_pin, pref);
+  } else if (this->enable_rtd) {
+    Log.error("%s is required when RTD is enabled!", pref.c_str());
+    return false;
   }
 
   pref = "use_staticip";
@@ -139,7 +235,7 @@ bool Prefs::Load() {
     this->ip_gateway = myPrefs.getString(pref.c_str());
     Log.trace("Got value: %s for pref: %s", this->ip_gateway, pref);
   } else if (!exists && this->static_ip_en) {
-    Log.error("Use Static IP is enabled but IP Address is not defined which is "
+    Log.error("Use Static IP is enabled but Gateway is not defined which is "
               "required");
     return false;
   }
@@ -151,7 +247,7 @@ bool Prefs::Load() {
     this->netmask = myPrefs.getString(pref.c_str());
     Log.trace("Got value: %s for pref: %s", this->netmask, pref);
   } else if (!exists && this->static_ip_en) {
-    Log.error("Use Static IP is enabled but IP Address is not defined which is "
+    Log.error("Use Static IP is enabled but Subnet Mask is not defined which is "
               "required");
     return false;
   }

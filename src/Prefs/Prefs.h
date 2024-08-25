@@ -9,11 +9,15 @@ class Prefs {
 public:
   Prefs();
   bool Load();
+  String DeviceName();
   String SSID();
   String SSIDPassword();
   String MQTTUri();
   String RootTopic();
+  String NTPServer();
   bool BLEEnabled();
+  bool RTDEnabled();
+  int RTDPin();
   bool StaticIPEnabled();
   String IPAddress();
   String IPGateway();
@@ -25,11 +29,15 @@ public:
   int LogLevel();
 
 private:
+  String device_name;
   String ssid;
   String ssid_password;
   String mqtt_uri;
   String root_topic;
+  String ntp_server;
   bool enable_ble;
+  bool enable_rtd;
+  u8_t rtd_pin;
   bool static_ip_en;
   String ip_address;
   String ip_gateway;
@@ -40,4 +48,4 @@ private:
   String mqtt_private_ca;
   u8_t log_level;
 };
-}; // namespace msh
+};  // namespace msh
