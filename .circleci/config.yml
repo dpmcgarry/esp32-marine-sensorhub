@@ -2,19 +2,30 @@
 # This is a generic template to serve as a base for your custom config
 # See: https://circleci.com/docs/configuration-reference
 version: 2.1
+orbs:
+  aws-cli: circleci/aws-cli@5.1.0
 jobs:
   build:
+    environment:
+      AWS_REGION: us-east-1
+      BASE_VERSION: 1.0.
     docker:
-      - image: cimg/base:stable
+      - image: ${AWS_ACCOUNT_NUMBER}.dkr.ecr.us-east-1.amazonaws.com/esp-idf:latest
+        aws_auth:
+          oidc_role_arn: ${AWS_ROLE_ARN}
     resource_class: dizon/onprem
     steps:
       - checkout
-      # Replace this with steps to build a package, or executable
       - run:
-          name: Build an artifact
-          command: touch example.txt
-      - store_artifacts:
-          path: example.txt
+          name: List Home
+          command: ls -la -R ~
+      - run:
+          name: Print Working Directory
+          command: pwd
+      - aws-cli/setup:
+          profile_name: default
+          region: ${AWS_REGION}
+          role_arn: ${AWS_ROLE_ARN
 workflows:
   example:
     jobs:
