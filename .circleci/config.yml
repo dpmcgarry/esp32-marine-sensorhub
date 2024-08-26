@@ -28,7 +28,7 @@ jobs:
           name: Build Sample Prefs Partition
           command: |
             source /root/esp/esp-idf/export.sh
-            python /root/esp/esp-idf/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py generate ./mshprefs.csv ./mshprefs.bin 20480
+            python /root/esp/esp-idf/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py generate ./sample_prefs.csv ./sample_prefs.bin 20480
       - run:
           name: Build ELF Image for ESP32C6
           command: arduino-cli compile --fqbn esp32:esp32:esp32c6:FlashSize=8M,PartitionScheme=default_8MB esp32-marine-sensorhub
