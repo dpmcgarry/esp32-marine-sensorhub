@@ -119,6 +119,12 @@ Get Intellisense working by adding this to your include path:
 "~/.arduino15/packages/esp32/tools/esp-rv32/2302/riscv32-esp-elf/include/**" 
 ```
 
+Manual Build Command:
+
+```bash
+
+```
+
 ## TODO
 
 * ~~Cleanup the WiFi Utils code~~

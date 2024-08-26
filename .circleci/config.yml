@@ -24,6 +24,17 @@ jobs:
           profile_name: default
           region: ${AWS_REGION}
           role_arn: ${AWS_ROLE_ARN}
+      - run:
+          name: Build Sample Prefs Partition
+          command: |
+            '. ~/esp/esp-idf/export.sh'
+            python ~/esp/esp-idf/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py generate ./mshprefs.csv ./mshprefs.bin 20480
+      - run:
+          name: Build ELF Image for ESP32C6
+          command: arduino-cli compile --fqbn esp32:esp32:esp32c6:FlashSize=8M,PartitionScheme=default_8MB esp32-marine-sensorhub
+      - run:
+          name: List Results
+          command: ls -la -R .
 workflows:
   build-and-upload:
     jobs:
