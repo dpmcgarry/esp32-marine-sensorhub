@@ -1,4 +1,4 @@
 FROM ubuntu:latest
-RUN apt update && apt upgrade -y && apt install git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0 -y && apt-get clean
+RUN apt update && apt upgrade -y && apt install unzip curl git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0 -y && apt-get clean
 RUN mkdir -p ~/esp && cd ~/esp && git clone -b v5.3 --recursive https://github.com/espressif/esp-idf.git
 RUN cd ~/esp/esp-idf && ./install.sh esp32c6

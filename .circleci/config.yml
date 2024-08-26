@@ -27,4 +27,6 @@ jobs:
 workflows:
   build-and-upload:
     jobs:
-      - build
+      - build:
+         context:
+            - aws-constants
