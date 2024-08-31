@@ -34,11 +34,12 @@ jobs:
             aws s3 cp s3://${ARTIFACT_BUCKET}/etc/msh/prefs/ ./prefs --recursive
             ls -l ./prefs
       - run:
-          name: Build All Pref Partitions
+          name: Build and Upload All Pref Partitions
           command: |
             source /root/esp/esp-idf/export.sh
             cd prefs
             for preffile in *.csv; do python /root/esp/esp-idf/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py generate ./${preffile} ./${preffile/.csv/.bin} 20480 ; done
+            for binfile in *.bin; do aws s3 cp ${binfile} s3://${ARTIFACT_BUCKET}/esp/msh/prefs/${binfile/.bin/-latest.bin} && aws s3 cp ${binfile} s3://${ARTIFACT_BUCKET}/esp/msh/prefs/${binfile/.bin/-BASE_VERSION.CIRCLE_BUILD_NUM.bin} ; done
             ls -l
       - run:
           name: Build ELF Image for ESP32C6
