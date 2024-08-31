@@ -107,8 +107,8 @@ Commands To Generate and Write NVS Partition - assumed the IDF is installed in y
 
 ```bash
 . ~/esp/esp-idf/export.sh
-python ~/esp/esp-idf/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py generate ./mshprefs.csv ./mshprefs.bin 20480
-python ~/esp/esp-idf/components/partition_table/parttool.py --port /dev/ttyUSB0 write_partition --partition-name=nvs --input ./mshprefs.bin 
+python ~/esp/esp-idf/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py generate ./devprefs.csv ./devprefs.bin 20480
+python ~/esp/esp-idf/components/partition_table/parttool.py --port /dev/ttyUSB0 write_partition --partition-name=nvs --input ./devprefs.bin 
 
 ```
 
