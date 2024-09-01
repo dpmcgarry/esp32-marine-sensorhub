@@ -44,7 +44,8 @@ jobs:
       - run:
           name: Build ELF Image for ESP32C6
           command: |
-            mv * ./esp32-marine-sensorhub
+            cd ..
+            mv ./project ./esp32-marine-sensorhub
             cd esp32-marine-sensorhub
             arduino-cli compile --fqbn esp32:esp32:esp32c6:FlashSize=8M,PartitionScheme=default_8MB esp32-marine-sensorhub.ino -v -e
       - run:
