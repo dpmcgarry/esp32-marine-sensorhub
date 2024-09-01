@@ -59,7 +59,7 @@ jobs:
           command: |
             zip esp32c6.zip ./build/esp32.esp32.esp32c6/*
             aws s3 cp esp32c6.zip s3://${ARTIFACT_BUCKET}/esp/msh/images/esp32c6-latest.zip
-            aws s3 cp esp32c6.zip s3://${ARTIFACT_BUCKET}/esp/msh/images/esp32c6-${BASEVERSION}${CIRCLE_BUILD_NUM}.zip
+            aws s3 cp esp32c6.zip s3://${ARTIFACT_BUCKET}/esp/msh/images/esp32c6-${BASE_VERSION}${CIRCLE_BUILD_NUM}.zip
 
 workflows:
   build-and-upload:
