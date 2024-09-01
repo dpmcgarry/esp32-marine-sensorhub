@@ -52,9 +52,12 @@ jobs:
             arduino-cli lib update-index
             arduino-cli lib install "Adafruit MAX31865 library" "ArduinoJson" "ArduinoLog"
             arduino-cli compile --fqbn esp32:esp32:esp32c6:FlashSize=8M,PartitionScheme=default_8MB esp32-marine-sensorhub.ino -v -e
+            cd ..
+            mv ./esp32-marine-sensorhub ./project
       - run:
-          name: List Results
-          command: ls -la -R .
+          name: Upload ELF Images
+          command: |
+            ls -la -R .
 workflows:
   build-and-upload:
     jobs:
