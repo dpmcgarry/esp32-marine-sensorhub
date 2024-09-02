@@ -40,13 +40,17 @@ void InkbirdBLEClient::onResult(BLEAdvertisedDevice advertisedDevice) {
     }
     String address = advertisedDevice.getAddress().toString();
     Log.trace("BLE Address: %s", address.c_str());
-    long lsb = (long)mfrData.charAt(0);
+    // Start with unsigned 16 bit values so we can bit shift
+    uint16_t lsb = (uint16_t)mfrData.charAt(0);
     Log.trace("BLE LSB: %l", lsb);
-    long msb = (long)mfrData.charAt(1);
+    uint16_t msb = (uint16_t)mfrData.charAt(1);
     Log.trace("BLE MSB: %l", msb);
+    // Shift the MSB by a byte
     msb = msb << 8;
     Log.trace("BLE MSB: %l", msb);
-    float temp = (float)(lsb + msb) / 100.0;
+    // Combine the two bytes and convert to signed to handle negative temps
+    // Then cast to float on the division
+    float temp = (int16_t)(lsb + msb) / 100.0f;
     Log.trace("BLE Temperature C: %F", temp);
     float temp_f = ((temp * 9 / 5) + 32);
     Log.trace("BLE Temperature F: %F", temp_f);

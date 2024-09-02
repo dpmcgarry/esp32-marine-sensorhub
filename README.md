@@ -122,7 +122,20 @@ Get Intellisense working by adding this to your include path:
 Manual Build Command:
 
 ```bash
+arduino-cli compile --fqbn esp32:esp32:esp32c6:FlashSize=8M,PartitionScheme=default_8MB esp32-marine-sensorhub.ino -v -e
+```
 
+Manual Build Command with Version Defined (Need to merge ):
+
+```bash
+arduino-cli compile --fqbn esp32:esp32:esp32c6:FlashSize=8M,PartitionScheme=default_8MB --build-property "compiler.cpp.extra_flags=-DMSH_VERSION=\"42.0.0\" -MMD -c" esp32-marine-sensorhub.ino -v -e
+```
+
+Manual Flash Command:
+
+```bash
+. ~/esp/esp-idf/export.sh
+esptool.py --chip esp32c6 --port "/dev/ttyUSB0" --baud 921600  --before default_reset --after hard_reset write_flash  -z --flash_mode keep --flash_freq keep --flash_size keep 0x0 "esp32-marine-sensorhub.ino.bootloader.bin" 0x8000 "esp32-marine-sensorhub.ino.partitions.bin" 0xe000 ~/.arduino15/packages/esp32/hardware/esp32/3.1.0-RC1/tools/partitions/boot_app0.bin 0x10000 "esp32-marine-sensorhub.ino.bin" 
 ```
 
 ## TODO
@@ -143,6 +156,7 @@ Manual Build Command:
 * ~~Set Device Status using Pixel LED~~
 * ~~Add device heartbeat / status~~
 * ~~Add PT RTD support~~
+* NTP Time is flaky
 * Add INA219 Support for Oil Pressure, Engine Temp
 * ~~Test integration with Telegraf~~
 * Network logging (Syslog)
