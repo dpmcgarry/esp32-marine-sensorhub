@@ -51,7 +51,13 @@ bool ESPClient::Read() {
       Log.trace("MQTT is connected. Will send ESP Message");
       String j_str = msg.ToJSONString();
       Log.trace("ESP JSON: %s", j_str.c_str());
-      String topic_str = esp_subtopic + "/" + msg.MAC;
+      String macstrip;
+      for (int i = 0; i < msg.MAC.length(); i++) {
+        if (msg.MAC[i] != ':') {
+          macstrip += msg.MAC[i];
+        }
+      }
+      String topic_str = esp_subtopic + "/" + macstrip;
       Log.trace("Using ESP Subtopic: %s", topic_str);
       this->mqtt->Publish(topic_str, j_str, 0, 1, 1);
     } else {

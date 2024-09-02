@@ -107,7 +107,13 @@ bool RTDClient::Read() {
       msg.MAC = WiFi.macAddress();
       String j_str = msg.ToJSONString();
       Log.trace("RTD JSON: %s", j_str.c_str());
-      String topic_str = rtdTemp_subtopic + "/" + msg.MAC;
+      String macstrip;
+      for (int i = 0; i < msg.MAC.length(); i++) {
+        if (msg.MAC[i] != ':') {
+          macstrip += msg.MAC[i];
+        }
+      }
+      String topic_str = rtdTemp_subtopic + "/" + macstrip;
       Log.trace("Using RTD Subtopic: %s", topic_str);
       this->mqtt->Publish(topic_str, j_str, 0, 1, 1);
     } else {

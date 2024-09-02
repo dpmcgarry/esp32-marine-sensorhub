@@ -75,7 +75,13 @@ void InkbirdBLEClient::onResult(BLEAdvertisedDevice advertisedDevice) {
     tMsg.RSSI = rssi;
     String j_str = tMsg.ToJSONString();
     Log.trace("BLE JSON: %s", j_str.c_str());
-    String topic_str = bleTemp_subtopic + "/" + address;
+    String macstrip;
+    for (int i = 0; i < address.length(); i++) {
+      if (address[i] != ':') {
+        macstrip += address[i];
+      }
+    }
+    String topic_str = bleTemp_subtopic + "/" + macstrip;
     Log.trace("Using BLE subtopic: %s", topic_str.c_str());
     if (this->mqtt != NULL) {
       if (this->mqtt->Connected()) {
