@@ -156,7 +156,8 @@ esptool.py --chip esp32c6 --port "/dev/ttyUSB0" --baud 921600  --before default_
 * ~~Set Device Status using Pixel LED~~
 * ~~Add device heartbeat / status~~
 * ~~Add PT RTD support~~
-* NTP Time is flaky
+* NTP Time is flaky - appears to be a race condition of some kind
+* Figure out how to make a single flash file
 * Add INA219 Support for Oil Pressure, Engine Temp
 * ~~Test integration with Telegraf~~
 * Network logging (Syslog)
@@ -164,4 +165,4 @@ esptool.py --chip esp32c6 --port "/dev/ttyUSB0" --baud 921600  --before default_
 * Store some log buffer locally to send over network on reconnect
 * OTA Support
 * Add an actual architecture diagram in here
-* Setup a CI build for this so I can share releases
+* ~~Setup a CI build for this so I can share releases~~
