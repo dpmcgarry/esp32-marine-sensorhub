@@ -20,7 +20,7 @@ RTDClient::RTDClient(int RTDPin, msh::MQTTClient *mqtt) {
   this->lastError = 0;
   this->seqErrors = 0;
   this->cumErrors = 0;
-  Log.info("Setting RTD Pin to %d", this->rtdPin);
+  Log.info("Setting RTD Chip Select Pin to %d", this->rtdPin);
   thermo = new Adafruit_MAX31865(this->rtdPin);
   thermo->begin(MAX31865_3WIRE);
 }

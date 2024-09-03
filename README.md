@@ -97,7 +97,8 @@ You should be able to use/fork this by doing the following:
 1. Install Arduino IDE / CLI on your machine
 1. Install the ESP-IDF on your machine (installing the VSCode extension makes this semi-trivial)
 1. Create your own settings CSV file based on the example. You can create multiple environments by creating multiple settings CSV files.
-1. Right now I am working with ESP32-C6 devkits so that *should* work out of the box. However adding support for new hardware shouldn't be too hard as long as the ESP implementation of Arduino supports it.
+1. Right now I am working with ESP32-C6 and ESP32-S3 devkits so that *should* work out of the box. However adding support for new hardware shouldn't be too hard as long as the ESP implementation of Arduino supports it.
+1. Running the BLE poller, the RTD, and the heartbeat on a C6 starts to bog it down a bit. Since I am thinking of having a few different instances of this running for various tasks, the S3 may be a better fit for wired sensors. You give up AX WiFi but you gain a second core at bump from 160MHz to 240MHz. Will do some testing as I roll this out.
 1. That said, right now I am focused on supporting ESP32 chips using the Arduino Framework. I don't see value in supporting hardware outside of the ESP32 ecosystem. This could of course change with time.
 1. Build and flash the sketch
 1. Generate and flash the settings partition using the commands below
@@ -121,22 +122,60 @@ Get Intellisense working by adding this to your include path:
 
 Manual Build Command:
 
+ESP32C6:
+
 ```bash
 arduino-cli compile --fqbn esp32:esp32:esp32c6:FlashSize=8M,PartitionScheme=default_8MB esp32-marine-sensorhub.ino -v -e
 ```
 
-Manual Build Command with Version Defined (Need to merge ):
+ESP32S3:
+
+```bash
+arduino-cli compile --fqbn esp32:esp32:esp32s3:FlashSize=8M,PartitionScheme=default_8MB esp32-marine-sensorhub.ino -v -e
+```
+
+Manual Build Command with Version Defined (Need to merge cpp.extra_flags from platform.txt):
+
+ESP32C6:
 
 ```bash
 arduino-cli compile --fqbn esp32:esp32:esp32c6:FlashSize=8M,PartitionScheme=default_8MB --build-property "compiler.cpp.extra_flags=-DMSH_VERSION=\"42.0.0\" -MMD -c" esp32-marine-sensorhub.ino -v -e
 ```
 
+ESP32S3:
+```bash
+arduino-cli compile --fqbn esp32:esp32:esp32s3:FlashSize=8M,PartitionScheme=default_8MB --build-property "compiler.cpp.extra_flags=-DMSH_VERSION=\"42.0.0\" -MMD -c" esp32-marine-sensorhub.ino -v -e
+```
+
 Manual Flash Command:
+
+ESP32C6:
 
 ```bash
 . ~/esp/esp-idf/export.sh
 esptool.py --chip esp32c6 --port "/dev/ttyUSB0" --baud 921600  --before default_reset --after hard_reset write_flash  -z --flash_mode keep --flash_freq keep --flash_size keep 0x0 "esp32-marine-sensorhub.ino.bootloader.bin" 0x8000 "esp32-marine-sensorhub.ino.partitions.bin" 0xe000 ~/.arduino15/packages/esp32/hardware/esp32/3.1.0-RC1/tools/partitions/boot_app0.bin 0x10000 "esp32-marine-sensorhub.ino.bin" 
 ```
+
+ESP32S3:
+
+```bash
+. ~/esp/esp-idf/export.sh
+esptool.py --chip esp32s3 --port "/dev/ttyUSB0" --baud 921600  --before default_reset --after hard_reset write_flash  -z --flash_mode keep --flash_freq keep --flash_size keep 0x0 "esp32-marine-sensorhub.ino.bootloader.bin" 0x8000 "esp32-marine-sensorhub.ino.partitions.bin" 0xe000 ~/.arduino15/packages/esp32/hardware/esp32/3.1.0-RC1/tools/partitions/boot_app0.bin 0x10000 "esp32-marine-sensorhub.ino.bin" 
+```
+
+### ESP Notes
+
+ESP32S3 SPI Pins:
+MOSI: 11
+MISO: 13
+SCK: 12
+CS: 10
+
+ESP32C6 SPI Pins:
+MOSI: 19
+MISO: 20
+SCK: 21
+CS: 18
 
 ## TODO
 
@@ -157,6 +196,8 @@ esptool.py --chip esp32c6 --port "/dev/ttyUSB0" --baud 921600  --before default_
 * ~~Add device heartbeat / status~~
 * ~~Add PT RTD support~~
 * NTP Time is flaky - appears to be a race condition of some kind
+* MQTT does not gracefully reconnect
+* Test what happens when WiFi is lost / regained
 * Figure out how to make a single flash file
 * Add INA219 Support for Oil Pressure, Engine Temp
 * ~~Test integration with Telegraf~~
