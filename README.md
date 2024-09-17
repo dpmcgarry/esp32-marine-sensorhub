@@ -163,6 +163,14 @@ ESP32S3:
 esptool.py --chip esp32s3 --port "/dev/ttyUSB0" --baud 921600  --before default_reset --after hard_reset write_flash  -z --flash_mode keep --flash_freq keep --flash_size keep 0x0 "esp32-marine-sensorhub.ino.bootloader.bin" 0x8000 "esp32-marine-sensorhub.ino.partitions.bin" 0xe000 ~/.arduino15/packages/esp32/hardware/esp32/3.1.0-RC1/tools/partitions/boot_app0.bin 0x10000 "esp32-marine-sensorhub.ino.bin" 
 ```
 
+Manual Monitor Command:
+
+ESP32C6:
+
+```bash
+arduino-cli monitor --port /dev/ttyUSB0 --config baudrate=115200
+```
+
 ### ESP Notes
 
 ESP32S3 SPI Pins:
@@ -206,4 +214,5 @@ CS: 18
 * Store some log buffer locally to send over network on reconnect
 * OTA Support
 * Add an actual architecture diagram in here
+* Figure out how to use / add the default root CA trust store
 * ~~Setup a CI build for this so I can share releases~~
