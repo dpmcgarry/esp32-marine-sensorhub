@@ -203,6 +203,8 @@ CS: 18
 * ~~Set Device Status using Pixel LED~~
 * ~~Add device heartbeat / status~~
 * ~~Add PT RTD support~~
+* Add configuration support for multiple RTD / Thermocouple Sensors by CS Pin
+* Add message structure for multiple RTD / Theromocouples
 * NTP Time is flaky - appears to be a race condition of some kind
 * MQTT does not gracefully reconnect
 * Test what happens when WiFi is lost / regained
