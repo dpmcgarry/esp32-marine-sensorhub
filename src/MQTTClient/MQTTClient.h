@@ -18,6 +18,10 @@ public:
   int Publish(const String &topic, const String &data, int len, int qos,
               int retain);
   int Subscribe(const String &topic, int qos);
+  int ConnectAttempts();
+  int DisconnectEvents();
+  void OnConnectAttempt();
+  void OnDisconnectEvent();
 
 private:
   String connect_uri;
@@ -25,6 +29,8 @@ private:
   bool connected;
   String root_topic;
   String mqtt_pem;
+  u16_t conn_attempts;
+  u16_t discon_events;
 };
 
 typedef struct {

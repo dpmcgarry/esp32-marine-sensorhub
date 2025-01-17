@@ -38,6 +38,22 @@ String MQTTClient::RootTopic() {
   return this->root_topic;
 }
 
+int MQTTClient::ConnectAttempts(){
+    return this->conn_attempts;
+}
+
+int MQTTClient::DisconnectEvents(){
+    return this->discon_events;
+}
+
+void MQTTClient::OnConnectAttempt(){
+    this->conn_attempts++;
+}
+
+void MQTTClient::OnDisconnectEvent(){
+    this->discon_events++;
+}
+
 int MQTTClient::Publish(const String &topic, const String &data, int len,
                         int qos, int retain) {
   if (this->root_topic != NULL) {
@@ -85,6 +101,7 @@ static void mqtt_event_handler(void *arg, esp_event_base_t base,
       break;
     case MQTT_EVENT_DISCONNECTED:
       mqtt->Connected(false);
+      mqtt->OnDisconnectEvent();
       Log.notice("MQTT_EVENT_DISCONNECTED");
       break;
 
@@ -103,7 +120,6 @@ static void mqtt_event_handler(void *arg, esp_event_base_t base,
       Log.notice("DATA=%.*s\r\n", event->data_len, event->data);
       break;
     case MQTT_EVENT_ERROR:
-      // mqtt->SetConnected(false);
       Log.error("MQTT_EVENT_ERROR");
       if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT) {
         log_error_if_nonzero("reported from esp-tls", event->error_handle->esp_tls_last_esp_err);
@@ -112,8 +128,10 @@ static void mqtt_event_handler(void *arg, esp_event_base_t base,
         ESP_LOGE(TAG, "Last errno string (%s)", strerror(event->error_handle->esp_transport_sock_errno));
       }
       break;
+    case MQTT_EVENT_BEFORE_CONNECT:
+        Log.notice("MQTT_EVENT_BEFORE_CONNECT");
+        mqtt->OnConnectAttempt();
     default:
-      // mqtt->SetConnected(false);
       Log.notice("Other event id:%d", event->event_id);
       break;
   }

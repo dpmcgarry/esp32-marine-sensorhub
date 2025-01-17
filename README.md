@@ -143,6 +143,7 @@ arduino-cli compile --fqbn esp32:esp32:esp32c6:FlashSize=8M,PartitionScheme=defa
 ```
 
 ESP32S3:
+
 ```bash
 arduino-cli compile --fqbn esp32:esp32:esp32s3:FlashSize=8M,PartitionScheme=default_8MB --build-property "compiler.cpp.extra_flags=-DMSH_VERSION=\"42.0.0\" -MMD -c" esp32-marine-sensorhub.ino -v -e
 ```
@@ -206,7 +207,7 @@ CS: 18
 * Add configuration support for multiple RTD / Thermocouple Sensors by CS Pin
 * Add message structure for multiple RTD / Theromocouples
 * NTP Time is flaky - appears to be a race condition of some kind
-* MQTT does not gracefully reconnect
+* ~~MQTT does not gracefully reconnect~~
 * Test what happens when WiFi is lost / regained
 * Figure out how to make a single flash file
 * Add INA219 Support for Oil Pressure, Engine Temp

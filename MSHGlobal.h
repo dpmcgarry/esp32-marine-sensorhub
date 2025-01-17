@@ -14,4 +14,3 @@ static const u16_t MAIN_DELAY_MS = 5000;
 // Globals
 static bool hasResetMQTT = false;
 static u16_t wifiReconnectCount = 0;
-static u16_t mqttReconnectCount = 0;

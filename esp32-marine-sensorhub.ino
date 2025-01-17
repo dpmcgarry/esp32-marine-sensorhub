@@ -88,10 +88,7 @@ void ESPTask(void *paramter) {
       if (!WiFi.isConnected()) {
         Log.warning("Wifi isn't connected so waiting for that to get sorted.");
       } else {
-        Log.warning("Wifi is connected. Attempting to reconnect MQTT.");
-        mqttReconnectCount++;
-        mqtt->Connect();
-        vTaskDelay(MAIN_DELAY_MS / portTICK_PERIOD_MS);
+        Log.warning("Wifi is connected. Waiting for MQTT to autoreconnect.");
       }
     }
     if (WiFi.isConnected() && mqtt != NULL && mqtt->Connected()) {

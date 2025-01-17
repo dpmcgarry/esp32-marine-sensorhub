@@ -10,7 +10,8 @@ struct ESPMessage {
   size_t FreePSRAM;
   String IPAddress;
   uint16_t WifiReconnectCount;
-  uint16_t MQTTReconnectCount;
+  uint16_t MQTTConnectAttempts;
+  uint16_t MQTTDisconnectEvents;
   bool BLEEnabled;
   bool RTDEnabled;
   int8_t WiFiRSSI;
@@ -27,7 +28,8 @@ struct ESPMessage {
     d["FreePSRAM"] = FreePSRAM;
     d["IPAddress"] = IPAddress;
     d["WiFiReconnectCount"] = WifiReconnectCount;
-    d["MQTTReconnectCount"] = MQTTReconnectCount;
+    d["MQTTConnectAttempts"] = MQTTConnectAttempts;
+    d["MQTTDisconnectEvents"] = MQTTDisconnectEvents;
     d["BLEEnabled"] = BLEEnabled;
     d["RTDEnabled"] = RTDEnabled;
     d["WiFiRSSI"] = WiFiRSSI;

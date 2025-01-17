@@ -27,8 +27,6 @@ bool ESPClient::Read() {
              msg.HasResetMQTT ? "true" : "false");
   msg.WifiReconnectCount = wifiReconnectCount;
   Log.notice("WiFi Reconnect Count: %u", msg.WifiReconnectCount);
-  msg.MQTTReconnectCount = mqttReconnectCount;
-  Log.notice("MQTT Reconnect Count: %u", msg.MQTTReconnectCount);
   msg.IPAddress = WiFi.localIP().toString();
   Log.notice("Local IP: %s", msg.IPAddress);
   msg.WiFiRSSI = WiFi.RSSI();
@@ -47,6 +45,10 @@ bool ESPClient::Read() {
   msg.MSHVersion = MSH_VERSION;
   Log.notice("Version is: %s", msg.MSHVersion.c_str());
   if (mqtt != NULL) {
+    msg.MQTTConnectAttempts = mqtt->ConnectAttempts();
+    Log.notice("MQTT Connect Attempts: %u", msg.MQTTConnectAttempts);
+    msg.MQTTDisconnectEvents = mqtt->DisconnectEvents();
+    Log.notice("MQTT Disconnect Events: %u", msg.MQTTDisconnectEvents);
     if (mqtt->Connected()) {
       Log.trace("MQTT is connected. Will send ESP Message");
       String j_str = msg.ToJSONString();
