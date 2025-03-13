@@ -141,7 +141,7 @@ bool Prefs::Load() {
   if (exists) {
 
     this->root_topic = myPrefs.getString(pref.c_str());
-    Log.trace("Got value: %s for pref: %s", this->root_topic, pref);
+    Log.trace("Got value: %s for pref: %s", this->root_topic.c_str(), pref);
   }
 
   pref = "ntp_server";
